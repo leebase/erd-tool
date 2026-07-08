@@ -1,0 +1,7 @@
+{
+  "start_command": ["python3", "tests/smoke_start.py"],
+  "check_command": ["python3", "scripts/smoke.py"],
+  "startup_timeout_seconds": 2,
+  "poll_interval_seconds": 0.1,
+  "check_timeout_seconds": 2
+}
