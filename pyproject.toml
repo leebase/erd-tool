@@ -1,0 +1,12 @@
+[project]
+name = "erd-tool"
+version = "0.1.0"
+description = "Snowflake-focused database modeling studio foundation"
+requires-python = ">=3.11"
+
+[project.scripts]
+erd-tool = "erd_tool.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
