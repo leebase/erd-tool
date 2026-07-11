@@ -40,6 +40,10 @@
   and a written fixture strategy. There is still no implemented Snowflake
   metadata translator, ER diagram UI, reusable project file UI, Snowflake DDL
   generation, or round-trip engineering.
+- Local operator readiness now includes a verified `erd-tool` Snowflake CLI
+  key-pair connection for `LEEBASE` / `ACCOUNTADMIN`. It enables a future
+  governed live-metadata slice but does not expand the committed product
+  capability beyond the current offline-fixture-first boundary.
 
 ## Next milestone
 

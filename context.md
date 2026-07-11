@@ -14,6 +14,10 @@
   `b280da16ca4a`, markdown-heading validation template repair from run
   `e83567a7f4bc`, and Snowflake metadata fixture strategy from run
   `b29a5acdb7d2`.
+- Local operator access: the `erd-tool` Snowflake CLI profile now uses a
+  dedicated RSA key pair for `LEEBASE` with `ACCOUNTADMIN`; private material is
+  machine-local under ignored `.snowflake/`, and a real read-only CLI identity
+  query passed on 2026-07-10.
 - Latest governed run:
   `/home/lee/projects/erd-tool-agent-orch-runs/b29a5acdb7d2`
   (`create_snowflake_metadata_fixture_strategy`) is in closeout handoff after
@@ -71,6 +75,10 @@
   canonical physical model and asserts stable serialization through the existing
   project-serialization seam. Stay test-first; do not add a diagram runtime or
   claim DDL/round-trip support in that slice.
+- Local test-runtime note: pytest is installed in the isolated Python 3.14
+  environment at `~/.venvs/erd-tool`. Use
+  `~/.venvs/erd-tool/bin/python -m pytest tests -q` for future local checks;
+  the system Python remains unchanged.
 - Carry earlier non-blocking findings forward in parallel where they block
   infrastructure or adoption: markdown-heading importable guidance API (Medium),
   template smoke-evidence/JSON-vs-YAML naming (Low), scaffold CLI parser reuse

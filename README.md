@@ -11,6 +11,26 @@ The first production milestone is Snowflake-focused:
 - Generate Snowflake DDL.
 - Support successful round-trip engineering.
 
+## Local Snowflake CLI Access
+
+The local `erd-tool` Snowflake CLI connection uses key-pair authentication and
+is named `erd-tool`. It is intentionally machine-local: connection details,
+the private key, and any credentials remain under the ignored `.snowflake/`
+directory or the owner-only Snowflake CLI configuration directory.
+
+Verify the local connection before using a future live-metadata adapter:
+
+```bash
+snow connection test --connection erd-tool
+snow sql --connection erd-tool --query \
+  'select current_user(), current_role(), current_account()'
+```
+
+Do not add Snowflake account identifiers, passwords, private keys, session
+tokens, or connection settings to project files, fixtures, tests, or commits.
+The current product slice remains offline-fixture-first; this connection is an
+operator capability for a later, explicitly scoped live-connector slice.
+
 ## Project Files
 
 Project files are local, JSON-compatible files for saving the database model

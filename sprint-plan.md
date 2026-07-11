@@ -9,6 +9,8 @@
   dependencies.
 - [x] Gate the foundation evaluation with user smoke and Agent-Orch review
   verdict.
+- [x] Configure and verify local Snowflake CLI key-pair access for the
+  `erd-tool` operator connection while keeping `.snowflake/` untracked.
 - [ ] Review and commit useful governed outputs from runs `92f0f7950898`,
   `f5c992dbfae3`, `b280da16ca4a`, `e83567a7f4bc`, and `b29a5acdb7d2`.
 - [ ] Run Agent-Orch doctor and resolve readiness findings.

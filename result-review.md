@@ -1,5 +1,38 @@
 # Result Review
 
+## 2026-07-10 - Local Snowflake key-pair CLI access
+
+### What Was Built
+
+A dedicated RSA key pair was generated under the ignored local `.snowflake/`
+directory, its public half was registered for Snowflake user `LEEBASE`, and a
+named local Snowflake CLI connection, `erd-tool`, was configured with
+key-pair/JWT authentication. The connection was verified with the actual CLI
+as `LEEBASE` using `ACCOUNTADMIN`.
+
+### Why It Matters
+
+The project can now use a real Snowflake account for a future, explicitly
+governed live-metadata connector slice without putting a password, private key,
+or connection state in the repository or canonical model.
+
+### How to Verify
+
+```bash
+cd /Users/lee/projects/erd-tool
+snow connection test --connection erd-tool
+snow sql --connection erd-tool --query \
+  'select current_user(), current_role(), current_account()'
+git check-ignore -v .snowflake/keys/erd-tool-leebase.p8
+```
+
+The local smoke and syntax checks pass. The isolated Python 3.14 test runtime
+at `~/.venvs/erd-tool` has pytest installed; verify the full suite with:
+
+```bash
+~/.venvs/erd-tool/bin/python -m pytest tests -q
+```
+
 ## 2026-07-10 - Snowflake metadata fixture strategy
 
 ### What Was Built

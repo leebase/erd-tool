@@ -8,6 +8,23 @@
 - Smoke surface: `python3 scripts/smoke.py`.
 - Test surface: `python3 -m pytest tests`.
 
+## Local Snowflake Key-Pair Authentication
+
+Recorded: 2026-07-10.
+
+The local developer connection named `erd-tool` authenticates the Snowflake
+user `LEEBASE` with a dedicated RSA key pair. Its private key is machine-local
+under the ignored `.snowflake/` directory and has owner-only permissions; only
+the public key is registered with Snowflake. The CLI profile uses
+`SNOWFLAKE_JWT`, `ACCOUNTADMIN`, and the default `COMPUTE_WH` warehouse.
+
+This is an operator access boundary, not part of the product model. The
+canonical physical model, project files, offline fixtures, test data, and
+committed documentation must continue to exclude credentials, account/session
+details, warehouse state, and local key paths. A live connector may use this
+local capability only after a separately governed product slice defines its
+read-only metadata boundary and test strategy.
+
 ## Direction
 
 Durable components should evolve in this order:
