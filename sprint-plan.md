@@ -71,4 +71,5 @@
   and open the resulting canonical ER model. Data movement is optional.
 - [x] Obtain independent `gpt-5.6-terra-high` code review and repair all
   findings, then update AgentFlow handoff documents.
-- [ ] Commit and push verified changes in both repositories.
+- [x] Commit and push verified changes in both repositories (`erd-tool`
+  `d88dc51`; drawDB `7601f6a`, followed by this closeout handoff).

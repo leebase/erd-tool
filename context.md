@@ -61,6 +61,5 @@
 
 ### Next Actions Queue
 
-1. Commit and push both repositories.
-2. Future optional work: live Snowflake metadata reverse engineering and row-data
+1. Future optional work: live Snowflake metadata reverse engineering and row-data
    copy; neither is required for this completed structural milestone.
