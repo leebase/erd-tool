@@ -1,0 +1,58 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "Low",
+      "file": "architecture.md",
+      "location": "Open Source Foundation Evaluation / all candidate sections",
+      "problem": "No specific version number or commit hash is recorded for any evaluated candidate at evaluation time. If a candidate releases a major update or relicenses between this evaluation and an adoption decision, there is no baseline snapshot in the record to compare against. The synchronization strategy correctly calls for recording 'latest release/commit' before an implementation slice relies on a candidate, but the evaluation itself lacks this anchor.",
+      "proposed_fix": "Add a 'Version at evaluation time' line to each candidate section (e.g., 'elkjs 0.9.3, ELK 0.9.1 at 2026-07-08') so that the technical claims in the record can be checked against a specific upstream baseline before any adoption decision proceeds."
+    },
+    {
+      "id": "F002",
+      "severity": "Low",
+      "file": "architecture.md",
+      "location": "Open Source Foundation Evaluation / drawDB / Risks",
+      "problem": "The risk entry mentions 'AGPL network/source obligations' without distinguishing the AGPL v3 network-use provision from the traditional distribution-based copyleft trigger. The network-use provision applies even without binary distribution — any deployment scenario that serves drawDB components over a network (a local server or cloud variant) would trigger the provision independently of whether binaries are distributed. The current defer decision handles this conservatively, but the distinction is not captured for future reviewers.",
+      "proposed_fix": "Extend the risk statement to read: 'AGPL v3 adds a network-use source provision in addition to the standard distribution trigger; both must be assessed for any deployment scenario (desktop, local server, cloud) before the defer decision is revisited.'"
+    },
+    {
+      "id": "F003",
+      "severity": "Low",
+      "file": "architecture.md",
+      "location": "Open Source Foundation Evaluation / Mermaid / Risks",
+      "problem": "The risk entry says 'security review is required for rendering user-provided text,' which could suggest that canonically generated Mermaid text is safe by default. Mermaid versions have carried XSS vulnerabilities that affect rendering output regardless of whether the source text is user-provided or generated from the canonical model. Any browser rendering surface requires a patched, pinned Mermaid version and a security review.",
+      "proposed_fix": "Broaden the risk statement to: 'security review is required for any Mermaid rendering surface, whether the input is user-provided or canonically generated, because Mermaid versions have carried XSS vulnerabilities independent of input source; a patched pinned version is required before any rendering is introduced.'"
+    }
+  ],
+  "checks_run": [
+    {
+      "command": "python3 -m compileall src tests",
+      "exit_code": 0,
+      "summary": "All Python source files under src/erd_tool/ (model.py, cli.py, __init__.py) and tests/ (smoke_start.py, test_model.py) compiled without syntax errors."
+    }
+  ],
+  "lenses": {
+    "correctness": {
+      "finding_ids": ["F002"],
+      "justification": "The five adoption decisions are internally consistent between the summary table and the detailed sections. License identifications are accurate (AGPL-3.0 drawDB, EPL-2.0 Graphviz and ELK/elkjs, MIT Mermaid, Unknown snowflake-dbml-generator). The sole AGPL nuance (network-use vs. distribution trigger) is recorded as F002 but does not invalidate the defer decision. No High or Critical correctness issues found."
+    },
+    "completeness": {
+      "finding_ids": ["F001"],
+      "justification": "All five candidates carry the full required field set: identity, license, decision, rationale, local modification expectations, synchronization strategy, contribution opportunities, risks, and human approval requirement. The only gap is the absence of version/commit anchors at evaluation time, recorded as F001."
+    },
+    "security": {
+      "finding_ids": ["F003"],
+      "justification": "The drawDB AGPL and snowflake-dbml-generator unknown-provenance risks are correctly called out. The Mermaid XSS risk scope is understated — it applies to any rendering surface, not only user-provided input — recorded as F003. No security issues are introduced by the evaluation decisions themselves, all of which defer or avoid runtime adoption."
+    },
+    "architecture-alignment": {
+      "finding_ids": [],
+      "justification": "All decisions preserve the canonical physical model as the source of truth. Each integration path is described as an adapter (DOT exporter for Graphviz, coordinate adapter for ELK, generated text for Mermaid) rather than a model replacement. No candidate introduces a cloud dependency. Decisions align with AGENTS.md constraints: canonical model first, offline-first, evaluate before adopting."
+    },
+    "license-fidelity": {
+      "finding_ids": [],
+      "justification": "All identified licenses appear accurate and the human-approval tiers are correctly calibrated to license risk: AGPL and unknown-license candidates require approval before any source copy or fork; EPL-2.0 candidates require approval before runtime adoption; MIT Mermaid requires approval at the dependency-addition stage. No license misattributions found."
+    }
+  }
+}

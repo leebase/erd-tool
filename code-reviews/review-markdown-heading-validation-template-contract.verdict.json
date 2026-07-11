@@ -1,0 +1,59 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "Medium",
+      "file": "tests/test_markdown_heading_guidance.py",
+      "location": "GUIDANCE_API_MODULE constant, lines 15-16 and _load_api_guidance(), lines 115-137",
+      "problem": "The implementation plan (Architecture section) specified a standalone Python module src/erd_tool/playbook_validation.py with pure functions callable from a CLI or Agent-Orch authoring path. That module was not created. The test silently falls back to reading the template file when the module import fails, so there is no importable Python API that can be invoked programmatically at authoring time.",
+      "proposed_fix": "Create src/erd_tool/markdown_heading_guidance.py (or playbook_validation.py) that exports the guidance data as a constant or callable so the erd_tool.markdown_heading_guidance import path succeeds and the fallback template-read path is no longer exercised in normal use."
+    },
+    {
+      "id": "F002",
+      "severity": "Low",
+      "file": "docs/markdown-heading-validation-contract.md",
+      "location": "Acceptance Checks, item 3",
+      "problem": "Contract acceptance check 3 requires the smoke gate to exercise the authoring-time check on a representative generated playbook before launch and record a passing result. No artifact evidence under artifacts/ was produced; the pytest run fulfills the spirit but not the letter of this check.",
+      "proposed_fix": "Record smoke gate output (e.g., artifacts/user-smoke/result.json or a similar manifest) when the slice is exercised pre-launch, or amend the contract to accept pytest output as the smoke gate evidence."
+    },
+    {
+      "id": "F003",
+      "severity": "Low",
+      "file": "playbooks/templates/repair_before_review_feature_delivery.yaml",
+      "location": "file header / extension",
+      "problem": "The file has a .yaml extension but its content is valid JSON. YAML is a superset of JSON so tools parse it correctly, but the mismatch can confuse editors, linters, and maintainers expecting YAML syntax.",
+      "proposed_fix": "Either rename the file to repair_before_review_feature_delivery.json or convert its content to idiomatic YAML formatting."
+    }
+  ],
+  "checks_run": [
+    {
+      "command": "python3 -m pytest tests/test_markdown_heading_guidance.py",
+      "exit_code": 0,
+      "summary": "3 tests collected and passed: test_guidance_exposes_exact_heading_and_numeric_minimum_before_launch, test_guidance_carries_heading_contract_into_worker_mission_and_retry_text, test_guidance_manifest_includes_reusable_markdown_heading_validation_block."
+    },
+    {
+      "command": "python3 -m compileall src tests",
+      "exit_code": 0,
+      "summary": "All source files under src/erd_tool/ and tests/ compiled without syntax errors: cli.py, project_serialization.py, smoke_start.py, test_markdown_heading_guidance.py, test_model.py, test_project_serialization.py."
+    }
+  ],
+  "lenses": {
+    "correctness": {
+      "finding_ids": [],
+      "justification": "All three tests pass. The template correctly carries the exact heading string 'Markdown Heading Validation Guidance' and numeric minimum 80 into both the mission and retry_message fields, and the reusable markdown_headings_present validation block uses identical strings. No correctness defects found."
+    },
+    "plan-alignment": {
+      "finding_ids": ["F001"],
+      "justification": "The plan's Architecture section specified a Python module with pure functions; the delivery uses a template-embedded guidance block with a test that falls back to file-reading. The contract's acceptance checks are met, but the Python API layer described in the plan was not created."
+    },
+    "contract-coverage": {
+      "finding_ids": ["F002"],
+      "justification": "Acceptance checks 1, 2, and 4 are satisfied by the test suite and this review. Check 3 (smoke gate artifact) has no recorded artifact evidence."
+    },
+    "maintainability": {
+      "finding_ids": ["F003"],
+      "justification": "The .yaml extension on a JSON file is a minor naming inconsistency. No other maintainability issues found; the template structure is clear and the test helpers are readable."
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "Low",
+      "file": ".agent-orch/strict-lint-repair.playbook.yaml",
+      "location": "steps[0].validation.system[0].command",
+      "problem": "The step_01 lint-playbook validation command hard-codes an absolute PYTHONPATH (/home/lee/projects/agent-orch/src), making the gate non-portable if agent-orch is relocated or run on a different host. This defect predates the routing repair and was not introduced by it.",
+      "proposed_fix": "Replace the hardcoded absolute path with a relative or environment-variable-driven reference (e.g. ${AGENT_ORCH_SRC}), or install agent_orch as a package so no PYTHONPATH override is required."
+    }
+  ],
+  "checks_run": [
+    {
+      "command": "python3 -m compileall src tests",
+      "exit_code": 0,
+      "summary": "All 7 Python source files under src/ and tests/ compiled without syntax errors."
+    },
+    {
+      "command": "python3 -m pytest tests/",
+      "exit_code": 0,
+      "summary": "14 tests collected and passed."
+    },
+    {
+      "command": "python3 -c \"import yaml; yaml.safe_load(open('.agent-orch/strict-lint-repair.playbook.yaml'))\"",
+      "exit_code": 0,
+      "summary": "Playbook file parses as valid YAML with no structural errors."
+    }
+  ],
+  "lenses": {
+    "correctness": {
+      "finding_ids": ["F001"],
+      "justification": "gpt-5.4 is confirmed absent from all governed files (full-project grep returned no matches). The replacement model gpt-5.5 is listed in validated-pairings.json as a codex_cli pairing validated on 2026-07-08. Routing fields in defaults.routing.primary and roles.implementation_worker contain only harness and model. The only correctness-adjacent concern is the hardcoded PYTHONPATH in the step_01 system validation command (F001), which predates this repair."
+    },
+    "smoke_gate": {
+      "finding_ids": [],
+      "justification": "step_02_run_user_smoke_gate is present and structurally unchanged: worker is smoke_runner, file_hash_matches validators cover both scripts/smoke.py (e81748b3...) and tests/smoke_manifest.json (2bf0f78f...). Declared hashes match the live files. The repair did not weaken or remove the smoke gate."
+    },
+    "review_gate": {
+      "finding_ids": [],
+      "justification": "step_03_review_verified_repair retains json_schema (builtin:review_verdict/v1), review_verdict_clean (severity_threshold: High), and checks_run_match validators. The on_fail.repair escalation path targeting step_01 with max_cycles: 2 is preserved. The repair did not weaken or remove the review gate."
+    },
+    "workflow_behavior": {
+      "finding_ids": [],
+      "justification": "run_policy.on_step_failure: halt and require_validation_pass_to_advance: true are both present. The three-step ordering (repair → smoke → review) is intact. All steps carry on_fail.after_retries_exhausted: halt. No step was added, removed, or reordered by the routing repair."
+    }
+  }
+}

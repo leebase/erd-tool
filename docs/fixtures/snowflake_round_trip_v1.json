@@ -1,0 +1,217 @@
+{
+  "model_version": "1",
+  "name": "snowflake-round-trip-v1",
+  "namespaces": [
+    {
+      "id": "namespace:ANALYTICS.CORE",
+      "catalog": "ANALYTICS",
+      "schema": "CORE"
+    }
+  ],
+  "tables": [
+    {
+      "id": "table:ANALYTICS.CORE.CUSTOMER",
+      "namespace_id": "namespace:ANALYTICS.CORE",
+      "name": "CUSTOMER",
+      "kind": "table",
+      "columns": [
+        {
+          "id": "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_ID",
+          "name": "CUSTOMER_ID",
+          "ordinal": 1,
+          "data_type": {
+            "family": "NUMBER",
+            "text": "NUMBER(38, 0)",
+            "precision": 38,
+            "scale": 0,
+            "length": null
+          },
+          "nullable": false,
+          "default": null,
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_NAME",
+          "name": "CUSTOMER_NAME",
+          "ordinal": 2,
+          "data_type": {
+            "family": "VARCHAR",
+            "text": "VARCHAR(200)",
+            "precision": null,
+            "scale": null,
+            "length": 200
+          },
+          "nullable": false,
+          "default": null,
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.CUSTOMER.IS_ACTIVE",
+          "name": "IS_ACTIVE",
+          "ordinal": 3,
+          "data_type": {
+            "family": "BOOLEAN",
+            "text": "BOOLEAN",
+            "precision": null,
+            "scale": null,
+            "length": null
+          },
+          "nullable": false,
+          "default": "TRUE",
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.CUSTOMER.CREATED_AT",
+          "name": "CREATED_AT",
+          "ordinal": 4,
+          "data_type": {
+            "family": "TIMESTAMP_NTZ",
+            "text": "TIMESTAMP_NTZ(9)",
+            "precision": 9,
+            "scale": null,
+            "length": null
+          },
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP()",
+          "comment": null
+        }
+      ],
+      "constraints": [
+        {
+          "id": "constraint:ANALYTICS.CORE.CUSTOMER.PK_CUSTOMER",
+          "name": "PK_CUSTOMER",
+          "kind": "primary_key",
+          "columns": [
+            "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_ID"
+          ],
+          "referenced_table_id": null,
+          "referenced_columns": []
+        }
+      ],
+      "comment": null
+    },
+    {
+      "id": "table:ANALYTICS.CORE.ORDER_HEADER",
+      "namespace_id": "namespace:ANALYTICS.CORE",
+      "name": "ORDER_HEADER",
+      "kind": "table",
+      "columns": [
+        {
+          "id": "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_ID",
+          "name": "ORDER_ID",
+          "ordinal": 1,
+          "data_type": {
+            "family": "NUMBER",
+            "text": "NUMBER(38, 0)",
+            "precision": 38,
+            "scale": 0,
+            "length": null
+          },
+          "nullable": false,
+          "default": null,
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.ORDER_HEADER.CUSTOMER_ID",
+          "name": "CUSTOMER_ID",
+          "ordinal": 2,
+          "data_type": {
+            "family": "NUMBER",
+            "text": "NUMBER(38, 0)",
+            "precision": 38,
+            "scale": 0,
+            "length": null
+          },
+          "nullable": false,
+          "default": null,
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_DATE",
+          "name": "ORDER_DATE",
+          "ordinal": 3,
+          "data_type": {
+            "family": "DATE",
+            "text": "DATE",
+            "precision": null,
+            "scale": null,
+            "length": null
+          },
+          "nullable": false,
+          "default": null,
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_TOTAL",
+          "name": "ORDER_TOTAL",
+          "ordinal": 4,
+          "data_type": {
+            "family": "NUMBER",
+            "text": "NUMBER(12, 2)",
+            "precision": 12,
+            "scale": 2,
+            "length": null
+          },
+          "nullable": false,
+          "default": "0",
+          "comment": null
+        },
+        {
+          "id": "column:ANALYTICS.CORE.ORDER_HEADER.NOTES",
+          "name": "NOTES",
+          "ordinal": 5,
+          "data_type": {
+            "family": "VARCHAR",
+            "text": "VARCHAR(500)",
+            "precision": null,
+            "scale": null,
+            "length": 500
+          },
+          "nullable": true,
+          "default": null,
+          "comment": null
+        }
+      ],
+      "constraints": [
+        {
+          "id": "constraint:ANALYTICS.CORE.ORDER_HEADER.PK_ORDER_HEADER",
+          "name": "PK_ORDER_HEADER",
+          "kind": "primary_key",
+          "columns": [
+            "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_ID"
+          ],
+          "referenced_table_id": null,
+          "referenced_columns": []
+        },
+        {
+          "id": "constraint:ANALYTICS.CORE.ORDER_HEADER.FK_ORDER_HEADER_CUSTOMER",
+          "name": "FK_ORDER_HEADER_CUSTOMER",
+          "kind": "foreign_key",
+          "columns": [
+            "column:ANALYTICS.CORE.ORDER_HEADER.CUSTOMER_ID"
+          ],
+          "referenced_table_id": "table:ANALYTICS.CORE.CUSTOMER",
+          "referenced_columns": [
+            "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_ID"
+          ]
+        }
+      ],
+      "comment": null
+    }
+  ],
+  "relationships": [
+    {
+      "id": "relationship:ANALYTICS.CORE.ORDER_HEADER.FK_ORDER_HEADER_CUSTOMER",
+      "name": "FK_ORDER_HEADER_CUSTOMER",
+      "source_table_id": "table:ANALYTICS.CORE.ORDER_HEADER",
+      "source_column_ids": [
+        "column:ANALYTICS.CORE.ORDER_HEADER.CUSTOMER_ID"
+      ],
+      "target_table_id": "table:ANALYTICS.CORE.CUSTOMER",
+      "target_column_ids": [
+        "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_ID"
+      ],
+      "cardinality": "many_to_one"
+    }
+  ]
+}

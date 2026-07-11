@@ -1,0 +1,47 @@
+{
+  "$schema": "builtin:review_verdict/v1",
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "Medium",
+      "file": "docs/fixtures/snowflake_round_trip_v1.json",
+      "location": "tables[1].constraints (ORDER_HEADER constraint list, lines 175-198)",
+      "problem": "The fixture lists PK_ORDER_HEADER before FK_ORDER_HEADER_CUSTOMER in the ORDER_HEADER constraints array. The strategy requires lists to be sorted by stable id. Lexicographically, 'constraint:ANALYTICS.CORE.ORDER_HEADER.FK_ORDER_HEADER_CUSTOMER' sorts before 'constraint:ANALYTICS.CORE.ORDER_HEADER.PK_ORDER_HEADER' (F < P). A translator that sorts by stable id will emit FK first and fail value-equality against the fixture.",
+      "proposed_fix": "Reorder the ORDER_HEADER constraints in the fixture so FK_ORDER_HEADER_CUSTOMER appears before PK_ORDER_HEADER, matching lexicographic id order. Alternatively, explicitly document in the strategy that constraints use a kind-precedence sort (PK before FK) rather than raw id-string order, and update the sort rule statement accordingly."
+    },
+    {
+      "id": "F-02",
+      "severity": "Medium",
+      "file": "tests/test_model.py",
+      "location": "test_physical_model_serializes_to_provider_neutral_json_ready_dict, lines 18-32",
+      "problem": "The seed test includes 'tables' and 'relationships' in provider_or_ui_keys and asserts they are disjoint from to_dict() output. Both are planned canonical model fields required by the v1 contract and present in the fixture JSON — they are not provider, session, or UI fields. When Phase 2 expands PhysicalModel to carry tables and relationships, to_dict() will include those keys and the seed test will incorrectly fail even for a correct implementation. The strategy does not identify this as a maintenance obligation.",
+      "proposed_fix": "Split the seed test assertion into two sets: (1) 'provider_session_ui_keys' containing account, warehouse, role, canvas, edges, nodes, viewport, theme, connection, session, etc. — keys that must never appear; and (2) a separate note or comment that 'tables' and 'relationships' are not yet implemented, not that they are forbidden. Remove 'tables' and 'relationships' from the disjointness check so Phase 2 implementation does not break the seed test."
+    }
+  ],
+  "checks_run": [
+    {
+      "command": "python3 -m compileall tests",
+      "exit_code": 0,
+      "summary": "All four test files (smoke_start.py, test_markdown_heading_guidance.py, test_model.py, test_project_serialization.py) compiled without syntax errors."
+    }
+  ],
+  "lenses": {
+    "fixture-integrity": {
+      "finding_ids": ["F-01"],
+      "justification": "The SQL and JSON pair is consistent with the v1 contract in type families, nullability, defaults, and forbidden-key exclusions. One constraint sort-order discrepancy was found: the fixture places PK before FK in the ORDER_HEADER constraints list, contradicting the stated 'sorted by stable id' rule."
+    },
+    "strategy-coherence": {
+      "finding_ids": ["F-02"],
+      "justification": "The phased model and offline maintenance workflow are sound and honest about current implementation state. The seed test incorrectly classifies planned canonical fields as provider/UI keys, creating a maintenance trap the strategy does not acknowledge."
+    },
+    "test-seam": {
+      "finding_ids": [],
+      "justification": "The canonical-model seam (PhysicalModel -> to_dict() -> save_project_model()) is the single accepted path from fixture input to assertions, matching the strategy's requirement. The forbidden-key sets in test_project_serialization.py are comprehensive and correct. No seam-design issues found."
+    },
+    "offline-determinism": {
+      "finding_ids": [],
+      "justification": "Fixture files contain only JSON-compatible primitive values. No timestamps, credentials, hostnames, or machine-local fields are present. ID derivation is fully path-based and stable across runs. The validation workflow and CI gate require no network access. No offline-determinism issues found."
+    }
+  }
+}

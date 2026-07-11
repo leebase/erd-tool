@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.next/
+.turbo/
+.pytest_cache/
+__pycache__/
+.agent-orch-scratch/
+*.pyc
+.env
+.env.*
+!.env.example
+
+# Local Snowflake credentials (contains secrets)
+.snowflake/

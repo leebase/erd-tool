@@ -1,0 +1,54 @@
+{
+  "verdict": "pass",
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "Low",
+      "file": "src/erd_tool/cli.py",
+      "location": "main(), lines 22-27",
+      "problem": "build_parser() is called twice when main() is invoked with no arguments: once on line 22 to produce the args namespace (binding the result to the local variable args but discarding the parser itself), and again on line 27 as build_parser().print_help(). The parser built on line 22 is already available and should be reused. This is a cosmetic inefficiency, not a logic error.",
+      "proposed_fix": "Assign build_parser() to a named local — e.g., parser = build_parser() — then call parser.parse_args(argv) and parser.print_help() on the same instance."
+    },
+    {
+      "id": "F002",
+      "severity": "Low",
+      "file": "tests/test_model.py",
+      "location": "entire file",
+      "problem": "All three tests use a well-formed name string ('operations-domain-model'). No negative-path tests cover empty string, whitespace-only, or very long names. If PhysicalModel gains name validation in a future slice, the suite will not catch regressions in edge-case inputs. Acceptable at seed stage but should be addressed when the first validation constraint lands.",
+      "proposed_fix": "Add at least one negative-path test (e.g., assert PhysicalModel(name='') raises ValueError) when the first name validation is introduced in model.py."
+    },
+    {
+      "id": "F003",
+      "severity": "Low",
+      "file": "tests/smoke_start.py",
+      "location": "lines 10-21",
+      "problem": "The signal handler assigns to a module-level _running flag via the global statement. This is functionally correct for a single-threaded process. If the file is extended to spawn background threads, the bare global introduces a potential race condition between the signal handler and any thread reading _running.",
+      "proposed_fix": "Replace the _running flag with threading.Event when threads are introduced: event = threading.Event(); event.wait(0.1) in the loop; event.set() in the handler."
+    }
+  ],
+  "checks_run": [
+    {
+      "command": "python3 -m compileall src tests",
+      "exit_code": 0,
+      "summary": "All 5 source files compiled without syntax errors: src/erd_tool/__init__.py, src/erd_tool/cli.py, src/erd_tool/model.py, tests/smoke_start.py, tests/test_model.py."
+    }
+  ],
+  "lenses": {
+    "correctness": {
+      "finding_ids": ["F001"],
+      "justification": "PhysicalModel is frozen=True; to_dict() is a direct field-copy with no conditional paths; cli.py smoke path serializes via json.dumps with no error paths at this stage. All three model tests pass. Smoke result confirms app_started and core_flow_completed true with exit codes 0. The only correctness note is F001: build_parser() is called twice in the no-args path, constructing a redundant parser instance rather than reusing the one already in scope."
+    },
+    "test-coverage": {
+      "finding_ids": ["F002"],
+      "justification": "The three tests cover module location, constructor round-trip, and full serialization contract including explicit provider-key exclusion. This is an adequate gate for a seed model. No negative-path coverage exists for name validation edge cases, recorded as F002. No High or Critical coverage gap at current scope."
+    },
+    "architecture-alignment": {
+      "finding_ids": [],
+      "justification": "PhysicalModel carries no provider, schema, canvas, or UI fields, fully consistent with the AGENTS.md constraint to strengthen the canonical physical model rather than bypassing it. cli.py targets the model directly without introducing a parallel data shape. scripts/smoke.py adds src/ to sys.path for installed-independent execution, matching the smoke surface documented in architecture.md. No architecture-alignment issues found."
+    },
+    "maintainability": {
+      "finding_ids": ["F003"],
+      "justification": "The scaffold is minimal and readable. The only future-fragility note is the module-level _running flag in smoke_start.py (F003), which works correctly now but would require replacement with threading.Event before threads are added. No other maintainability issues found."
+    }
+  }
+}

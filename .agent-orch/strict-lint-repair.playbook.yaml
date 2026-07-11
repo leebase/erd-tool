@@ -1,0 +1,119 @@
+name: ERD Tool strict lint repair
+playbook_id: erd_tool_strict_lint_repair
+defaults:
+  worker: codex_cli
+  routing:
+    primary:
+      harness: codex_cli
+      model: gpt-5.5
+  retry_policy:
+    max_attempts: 2
+    strategy: rerun_with_validation_feedback
+roles:
+  implementation_worker:
+    - harness: codex_cli
+      model: gpt-5.5
+      intensity: medium
+  slice_reviewer:
+    - harness: claude_code
+      model: sonnet
+      intensity: high
+run_policy:
+  on_step_failure: halt
+  require_validation_pass_to_advance: true
+steps:
+  - step_id: step_01_repair_strict_lint_playbook
+    name: Repair the strict-lint playbook
+    role: implementation_worker
+    mission: "Before writing, read AGENTS.md and follow the repo operating rules. Repair only Agent-Orch playbook assets under .agent-orch/. Ensure the repaired playbook loads, has top-level name:, keeps defaults.worker as a non-empty string, keeps routing.primary limited to harness and model fields, routes writable work through role: implementation_worker, contains no manual approval step, and retains the required smoke_runner and canonical review-verdict gates."
+    inputs:
+      - AGENTS.md
+      - .agent-orch/validated-pairings.json
+    allowed_paths:
+      - .agent-orch/
+    outputs:
+      required:
+        - path: .agent-orch/strict-lint-repair.playbook.yaml
+          type: yaml
+    validation:
+      structural:
+        - type: file_exists
+          path: .agent-orch/strict-lint-repair.playbook.yaml
+      system:
+        - type: command_succeeds
+          command: "PYTHONPATH=/home/lee/projects/agent-orch/src python3 -m agent_orch.main lint-playbook --strict --json .agent-orch/strict-lint-repair.playbook.yaml"
+          timeout_seconds: 120
+    on_fail:
+      retry_message: "Repair .agent-orch/strict-lint-repair.playbook.yaml until Agent-Orch strict lint exits cleanly, without adding manual approval steps or touching files outside .agent-orch/."
+      after_retries_exhausted: halt
+
+  - step_id: step_02_run_user_smoke_gate
+    name: Run the strict-lint smoke gate
+    worker: smoke_runner
+    mission: "Run the repository smoke manifest and capture user-visible workflow evidence under artifacts/user-smoke/."
+    inputs:
+      - scripts/smoke.py
+      - tests/smoke_manifest.json
+    allowed_paths:
+      - artifacts/user-smoke
+    outputs:
+      required:
+        - path: artifacts/user-smoke/result.json
+          type: json
+    validation:
+      structural:
+        - type: file_exists
+          path: artifacts/user-smoke/result.json
+        - type: json_parse
+          path: artifacts/user-smoke/result.json
+        - type: file_hash_matches
+          path: scripts/smoke.py
+          sha256: "e81748b3db7213af18fcc83dd2e13f376cd4ea1d86ba99c569a2592256c2bc1e"
+        - type: file_hash_matches
+          path: tests/smoke_manifest.json
+          sha256: "2bf0f78f4961e93c0d15f4b6005f7efa1d7f3ae4d259c8d1aca3f789be506173"
+    on_fail:
+      retry_message: "Repair the smoke manifest or the implementation until the smoke gate passes and result.json is valid JSON."
+      after_retries_exhausted: halt
+
+  - step_id: step_03_review_verified_repair
+    name: Review the verified strict-lint repair
+    role: slice_reviewer
+    mission: "Before writing, read AGENTS.md and follow the repo operating rules. Review the strict-lint repair and write code-reviews/review-strict-lint-repair.md with Checks Run and Lens Notes sections. Also write code-reviews/review-strict-lint-repair.verdict.json using the canonical review verdict schema: verdict, findings, checks_run, and lenses. Include at least one deterministic checks_run command that Agent-Orch can re-execute."
+    inputs:
+      - AGENTS.md
+      - .agent-orch/strict-lint-repair.playbook.yaml
+    allowed_paths:
+      - code-reviews/
+    outputs:
+      required:
+        - path: code-reviews/review-strict-lint-repair.md
+          type: markdown
+        - path: code-reviews/review-strict-lint-repair.verdict.json
+          type: json
+    validation:
+      structural:
+        - type: file_exists
+          path: code-reviews/review-strict-lint-repair.md
+        - type: markdown_headings_present
+          path: code-reviews/review-strict-lint-repair.md
+          headings:
+            - Checks Run
+            - Lens Notes
+          min_chars_under_heading: 40
+        - type: json_schema
+          path: code-reviews/review-strict-lint-repair.verdict.json
+          schema_path: builtin:review_verdict/v1
+        - type: review_verdict_clean
+          path: code-reviews/review-strict-lint-repair.verdict.json
+          severity_threshold: High
+      system:
+        - type: checks_run_match
+          path: code-reviews/review-strict-lint-repair.verdict.json
+          timeout_seconds: 600
+    on_fail:
+      retry_message: "Repair the review artifacts so the prose review and verdict JSON match the canonical schema and every claimed check is reproducible."
+      after_retries_exhausted: halt
+      repair:
+        step_id: step_01_repair_strict_lint_playbook
+        max_cycles: 2
