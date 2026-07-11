@@ -76,13 +76,13 @@ A logical physical container for tables.
 Required fields:
 
 - `id`: stable identifier.
-- `catalog`: database/catalog name, or `null` when absent.
-- `schema`: schema name, or `null` when absent.
+- `catalog`: required legal Snowflake database/catalog identifier.
+- `schema`: required legal Snowflake schema identifier.
 
 Rules:
 
-- For the Snowflake v1 fixture, `catalog` is the Snowflake database and
-  `schema` is the Snowflake schema.
+- `catalog` is the Snowflake database and `schema` is the Snowflake schema.
+- Multiple namespaces and qualified cross-schema relationships are supported.
 - Unquoted Snowflake identifiers are normalized to uppercase.
 - Quoted identifiers are out of scope for v1 and should be rejected by the
   fixture parser or left unimplemented until a later contract revision.

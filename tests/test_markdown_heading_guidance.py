@@ -79,6 +79,30 @@ def test_guidance_manifest_includes_reusable_markdown_heading_validation_block()
     )
 
 
+def test_api_guidance_returns_independent_copies() -> None:
+    module = importlib.import_module(GUIDANCE_API_MODULE)
+    getter = getattr(module, "get_markdown_heading_validation_guidance")
+
+    first = getter()
+    second = getter()
+
+    assert first == second
+    assert first is not second
+
+    first["mission"] = "mutated"
+    first["validation"]["structural"][0]["headings"].append("drift")
+    first["validation"]["structural"][0]["min_chars_under_heading"] = 1
+
+    third = getter()
+    assert third == second
+    assert third["mission"] != "mutated"
+    assert EXPECTED_GUIDANCE_HEADING in third["validation"]["structural"][0]["headings"]
+    assert (
+        third["validation"]["structural"][0]["min_chars_under_heading"]
+        == EXPECTED_MIN_CHARS_UNDER_HEADING
+    )
+
+
 def _load_guidance_source() -> tuple[str, Any]:
     api_guidance = _load_api_guidance()
     if api_guidance is not None:

@@ -1,5 +1,52 @@
 # Result Review
 
+## 2026-07-11 — Working SQLite-to-Snowflake ERD application
+
+### What Was Built
+
+ERD Tool now has an immutable canonical physical model, strict project format,
+Snowflake DDL import/rendering, read-only SQLite introspection, and a CLI/local
+server. The approved public drawDB fork adds Snowflake editing, canonical JSON
+open/save, local persistence, ELK auto-layout, DDL preview, legacy-project
+migration, and multi-schema projection.
+
+The live structural gate used the official Chinook SQLite database. The generated
+model contains 11 tables, 64 columns, and 11 relationships. Its generated DDL was
+applied through key-pair authentication to `ERD_TOOL_CHINOOK.PUBLIC`; Snowflake
+Information Schema confirmed 11 tables, 64 columns, 11 primary keys, 11 foreign
+keys, and zero enforced constraints. No row-data copy was required or added.
+
+### Why It Matters
+
+This is the first assembled product milestone rather than another isolated
+strategy slice. Structures move from SQLite into legal Snowflake objects, remain
+editable as an ER model, and preserve Snowflake's informational relationship
+semantics without storing credentials or inventing a second schema source.
+
+### How to Verify
+
+```bash
+cd /Users/lee/projects/erd-tool
+~/.venvs/erd-tool/bin/python -m pytest tests -q
+PYTHONPATH=src python3 -m erd_tool.cli sqlite-import /path/to/chinook.db \
+  --name Chinook --catalog ERD_TOOL_CHINOOK --schema PUBLIC \
+  --output /tmp/chinook.erd.json
+PYTHONPATH=src python3 -m erd_tool.cli render-ddl \
+  /tmp/chinook.erd.json --output /tmp/chinook.snowflake.sql
+
+cd /Users/lee/projects/drawdb
+npm test
+npm run lint
+npm run build
+npm run test:browser
+```
+
+Agent-Orch doctor reported `Overall status: ready`. The final verification count
+is 119 Python tests and 46 drawDB unit tests, plus lint, production build, and
+the real browser flow. Independent `gpt-5.6-terra-high` review drove multiple
+repair passes and ended with `PASS`; the permanent verdict is recorded in
+`code-reviews/review-working-erd-application.md`.
+
 ## 2026-07-10 - Open-source foundation restart handoff
 
 ### What Was Decided

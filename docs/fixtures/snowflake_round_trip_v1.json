@@ -174,16 +174,6 @@
       ],
       "constraints": [
         {
-          "id": "constraint:ANALYTICS.CORE.ORDER_HEADER.PK_ORDER_HEADER",
-          "name": "PK_ORDER_HEADER",
-          "kind": "primary_key",
-          "columns": [
-            "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_ID"
-          ],
-          "referenced_table_id": null,
-          "referenced_columns": []
-        },
-        {
           "id": "constraint:ANALYTICS.CORE.ORDER_HEADER.FK_ORDER_HEADER_CUSTOMER",
           "name": "FK_ORDER_HEADER_CUSTOMER",
           "kind": "foreign_key",
@@ -194,6 +184,16 @@
           "referenced_columns": [
             "column:ANALYTICS.CORE.CUSTOMER.CUSTOMER_ID"
           ]
+        },
+        {
+          "id": "constraint:ANALYTICS.CORE.ORDER_HEADER.PK_ORDER_HEADER",
+          "name": "PK_ORDER_HEADER",
+          "kind": "primary_key",
+          "columns": [
+            "column:ANALYTICS.CORE.ORDER_HEADER.ORDER_ID"
+          ],
+          "referenced_table_id": null,
+          "referenced_columns": []
         }
       ],
       "comment": null

@@ -8,6 +8,30 @@
 - Smoke surface: `python3 scripts/smoke.py`.
 - Test surface: `python3 -m pytest tests`.
 
+## Implemented Two-Repository Application
+
+Recorded: 2026-07-10.
+
+`erd-tool` now implements the immutable canonical v1 object graph, constrained
+Snowflake DDL import/rendering, read-only SQLite introspection, strict project
+serialization with separate diagram layout, CLI file workflows, and loopback
+static serving. The public sibling fork `leebase/drawdb` remains the approved
+AGPL-3.0 React editor and maps canonical projects into its existing editable
+diagram projection.
+
+SQLite identifiers normalize deterministically to legal unquoted Snowflake
+identifiers. Chinook-compatible declared types map to Snowflake NUMBER, FLOAT,
+VARCHAR, DATE, TIMESTAMP_NTZ, BOOLEAN, and BINARY. Generated standard-table
+PRIMARY KEY, UNIQUE, and FOREIGN KEY constraints carry `NOT ENFORCED` and never
+gain `RELY` automatically; NOT NULL remains enforced by Snowflake.
+
+The runtime layout package is exact `elkjs@0.11.1` (upstream tag commit
+`572e73323791d05f09b0815ff639af2b67f202ab`). The newer evaluated source pin
+`87f373f5697675f94de210f7d07170d7f2f97391` remains recorded, but it has no
+published runnable artifact and its clean local build currently fails in
+upstream Xtext generation. Mixing generated runtime files across versions is
+forbidden.
+
 ## Local Snowflake Key-Pair Authentication
 
 Recorded: 2026-07-10.
@@ -45,85 +69,21 @@ documentation, and DDL features should target it rather than bypassing it.
 
 Recorded: 2026-07-09.
 
-Project serialization is a thin, versioned persistence envelope around the
-canonical physical model. Its job is to save and load the model value without
-turning the project file into a Snowflake connection document, UI document, or
-provider-native graph.
+Project serialization is a strict versioned envelope around the complete
+canonical physical model plus a separate diagram layout. The implemented seams
+in `src/erd_tool/project_serialization.py` save/load `ProjectDocument` values and
+retain compatibility helpers for callers that only need `PhysicalModel`.
 
-The canonical seam is implemented in `src/erd_tool/project_serialization.py`:
+`physical_model` contains deterministic namespaces, tables, ordered columns,
+types, constraints, relationships, defaults, and comments. `diagram_layout`
+contains only canonical table-id positions and viewport. Theme, selection,
+collapse state, relationship routes, and undo history are derived or transient.
 
-- `save_project_model(model: PhysicalModel) -> dict[str, object]`
-- `load_project_model(project_data: object) -> PhysicalModel`
-
-File, CLI, desktop, or browser adapters may handle paths, bytes, dialogs,
-storage backends, pretty-printing, and user prompts around this seam. The seam
-itself works on JSON-decoded values and returns the canonical `PhysicalModel`.
-That keeps file IO, UI concerns, provider adapters, and Snowflake connection
-state out of the physical model contract.
-
-The current project envelope is:
-
-```json
-{
-  "project_version": "1",
-  "physical_model": {
-    "name": "operations-domain-model"
-  }
-}
-```
-
-For the seed implementation, `physical_model` is exactly
-`PhysicalModel.to_dict()`, which currently contains only the stable model name.
-When the canonical physical model expands to the v1 object graph, the
-`physical_model` member should become that deterministic canonical dictionary:
-namespaces, tables, column order, data types, keys, constraints, relationships,
-nullability, defaults, comments, and other implemented physical model fields.
-The project serializer must not invent a parallel schema representation.
-
-`project_version` belongs to the file envelope. `model_version`, when present in
-the expanded canonical model, belongs inside `physical_model`. These versions
-may change on different schedules: a project-file revision can add diagram or
-editor sections without changing the canonical physical model, and a model
-revision can add physical modeling fields without changing the envelope shape.
-
-The serializer must preserve database modeling content that exists in the
-canonical model:
-
-- Stable model name.
-- Namespaces such as Snowflake database and schema when implemented.
-- Tables, column order, data types, nullability, defaults, and comments when
-  implemented.
-- Primary keys, unique constraints, foreign keys, and derived relationships when
-  implemented.
-- Deterministic ids and list ordering defined by the canonical model contract.
-
-The serializer must exclude state that is not canonical physical model content:
-
-- Snowflake account, warehouse, role, connection, session, credentials, and
-  execution context.
-- Filesystem paths, hostnames, timestamps, generated smoke evidence, and other
-  machine-local values.
-- Diagram canvas state, node coordinates, edge routes, viewport, theme,
-  selection, expanded/collapsed state, and undo history.
-- Provider-native metadata blobs that bypass the canonical physical model.
-
-Future diagram and editor persistence may be added as separate top-level project
-sections, for example beside `physical_model`, after a compatibility contract
-defines their defaults and migration behavior. Those sections must reference
-canonical ids instead of duplicating tables, columns, or relationships as a
-second source of truth.
-
-The current implementation is intentionally a model-value seam, not a file
-manager. It does not define browser or desktop save dialogs, recent-file lists,
-autosave, backups, collaboration metadata, local preferences, live connection
-profiles, DDL generation, or Snowflake round-trip engineering.
-
-Current loading is intentionally strict. Version `1` requires exactly
-`project_version` and `physical_model` at the top level, and the seed
-`physical_model` requires exactly `name`. Unsupported versions, missing fields,
-malformed field types, and unknown fields fail with a serialization error. A
-later compatibility contract may allow optional fields, defaults, and migrations,
-but silent partial loads are not acceptable for project files.
+File dialogs, browser downloads, and IndexedDB persistence live in the drawDB
+adapter. Credentials, accounts, warehouses, roles, sessions, host paths, and
+provider-native blobs are rejected rather than serialized. Unsupported versions,
+unknown fields, invalid identifiers/types, unresolved references, and malformed
+layout fail loudly; missing layout defaults safely for older canonical files.
 
 Round-trip equality is decoded JSON value equality, not byte-for-byte file text.
 Pretty-printing, indentation, and raw object member ordering are presentation
@@ -171,16 +131,14 @@ left unimplemented until the contract is revised.
 `Namespace` represents a physical container for tables:
 
 - `id`: stable identifier.
-- `catalog`: database/catalog name, or `null` when absent.
-- `schema`: schema name, or `null` when absent.
+- `catalog`: required legal Snowflake database/catalog identifier.
+- `schema`: required legal Snowflake schema identifier.
 
-For the Snowflake v1 fixture, `catalog` is the Snowflake database and `schema`
-is the Snowflake schema. Cross-database and cross-schema relationships are out
-of scope for v1.
+`catalog` is the Snowflake database and `schema` is the Snowflake schema.
+Multiple namespaces and qualified cross-schema relationships are supported.
 
 Namespace ids use the normalized containment path:
-`namespace:<CATALOG>.<SCHEMA>`. Missing path components are represented by the
-literal `-` in ids, not omitted.
+`namespace:<CATALOG>.<SCHEMA>`.
 
 `Table` represents a permanent physical base table:
 
@@ -409,7 +367,11 @@ The fixture must not require live Snowflake credentials, network access,
 case-sensitive quoted identifiers, cross-database relationships, cross-schema
 relationships, or Snowflake DDL features outside this v1 object list.
 
-## Open Source Foundation Evaluation
+## Open Source Foundation Evaluation (Historical Decision Record)
+
+The evaluation below records how candidates were assessed. Its original
+"pending approval" language is superseded for drawDB and elkjs by the explicit
+approval and implemented two-repository decision at the top of this document.
 
 Recorded: 2026-07-08.
 
@@ -462,9 +424,8 @@ canonical physical model as the source of truth.
   [`drawdb-io/drawdb`](https://github.com/drawdb-io/drawdb), described by
   upstream as a browser database ERD editor and SQL generator.
 - License: GNU AGPL-3.0, per the upstream repository license.
-- Decision: Defer runtime adoption; use as product and interaction reference
-  only until a human explicitly approves AGPL exposure or an acceptable licensing
-  path exists.
+- Decision: Approved and adopted through the public `leebase/drawdb` fork with
+  AGPL-3.0 source, notices, upstream provenance, and patch history preserved.
 - Rationale: drawDB is highly relevant to the visual modeling surface: React,
   browser-first ERD editing, SQL import/export, DBML support, IndexedDB local
   storage patterns, and a mature interaction model. The AGPL-3.0 license is a
@@ -487,8 +448,7 @@ canonical physical model as the source of truth.
 - Risks: AGPL network/source obligations, large UI ownership surface, potential
   mismatch between drawDB storage and this project's canonical model, and
   long-term fork maintenance if deep customization is required.
-- Later human approval needed: Yes, before any source copy, fork, vendoring, or
-  runtime dependency adoption.
+- Later human approval needed: Satisfied for this public-fork delivery.
 
 ### snowflake-dbml-generator
 
@@ -556,8 +516,9 @@ canonical physical model as the source of truth.
   Kernel and [`kieler/elkjs`](https://github.com/kieler/elkjs) for the
   JavaScript library transpiled from ELK's Java sources.
 - License: Eclipse Public License 2.0, per upstream license files.
-- Decision: Adopt for the first browser layout spike, pending human approval
-  before adding the runtime dependency.
+- Decision: Adopted as exact runtime `elkjs@0.11.1` behind the local layout
+  adapter; the evaluated newer source pin remains documented but is not mixed
+  into the runtime.
 - Rationale: ELK is the best technical fit among the evaluated layout
   foundations for an editable ERD studio. It computes positions rather than
   owning rendering, supports hierarchical nodes and explicit ports, and has a
@@ -579,8 +540,7 @@ canonical physical model as the source of truth.
 - Risks: EPL-2.0 obligations, bundle size and web-worker requirements, layout
   latency on large schemas, generated JavaScript debugging complexity, and
   version coupling between ELK and elkjs.
-- Later human approval needed: Yes, before adding elkjs or ELK as a runtime
-  dependency.
+- Later human approval needed: Satisfied for the pinned elkjs runtime.
 
 ### Mermaid
 
