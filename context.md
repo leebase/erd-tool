@@ -79,6 +79,14 @@
   environment at `~/.venvs/erd-tool`. Use
   `~/.venvs/erd-tool/bin/python -m pytest tests -q` for future local checks;
   the system Python remains unchanged.
+- Restart handoff (2026-07-10): Lee explicitly directed the product to use and
+  fork the existing open-source foundations, not a clean-room UI. The fork
+  `https://github.com/leebase/drawdb` now exists from `drawdb-io/drawdb` at
+  upstream commit `b24ad20b6588b9b99609e8a03b87efa7b28cf245`; elkjs is pinned
+  initially to `87f373f5697675f94de210f7d07170d7f2f97391`. The delivery plan
+  in `docs/overnight-delivery-plan.md` was updated accordingly. No application
+  implementation has started; a Grok run was stopped before writes when this
+  foundation correction arrived. Lee is restarting the task with Sol.
 - Carry earlier non-blocking findings forward in parallel where they block
   infrastructure or adoption: markdown-heading importable guidance API (Medium),
   template smoke-evidence/JSON-vs-YAML naming (Low), scaffold CLI parser reuse

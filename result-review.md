@@ -1,5 +1,23 @@
 # Result Review
 
+## 2026-07-10 - Open-source foundation restart handoff
+
+### What Was Decided
+
+Lee explicitly approved forking and using drawDB as the ERD editor foundation,
+with ELK/elkjs as the layout foundation. The public GitHub fork
+`leebase/drawdb` was created from upstream commit
+`b24ad20b6588b9b99609e8a03b87efa7b28cf245`; elkjs is initially pinned to
+`87f373f5697675f94de210f7d07170d7f2f97391`.
+
+### Restart State
+
+No product code was written after this decision. The earlier clean-room static
+UI proposal was superseded in `docs/overnight-delivery-plan.md`. A fresh Sol
+session should integrate the forked React application through adapters around
+the canonical physical model, preserve drawDB's AGPL-3.0 obligations, and use
+the documented Chinook SQLite database as the forward-engineering demo input.
+
 ## 2026-07-10 - Local Snowflake key-pair CLI access
 
 ### What Was Built

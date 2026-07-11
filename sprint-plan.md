@@ -11,6 +11,9 @@
   verdict.
 - [x] Configure and verify local Snowflake CLI key-pair access for the
   `erd-tool` operator connection while keeping `.snowflake/` untracked.
+- [x] Approve and create the `leebase/drawdb` open-source editor fork; the
+  next implementation slice must integrate it with the canonical model and
+  elkjs layout adapter rather than build a replacement editor.
 - [ ] Review and commit useful governed outputs from runs `92f0f7950898`,
   `f5c992dbfae3`, `b280da16ca4a`, `e83567a7f4bc`, and `b29a5acdb7d2`.
 - [ ] Run Agent-Orch doctor and resolve readiness findings.
