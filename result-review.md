@@ -1,5 +1,38 @@
 # Result Review
 
+## 2026-07-15 — Open-source macOS release candidate
+
+### What Was Built
+
+The finished Electron/Snowflake application was consolidated into this
+repository under `desktop/`, branded as ERD Tool 0.1.0, and prepared as a
+reproducible Apple Silicon source release. Public-readiness work includes CI,
+an unsigned macOS package workflow, community and security policies, portable
+tutorials, changelog/release notes, source links in the application, and
+complete dependency/upstream notices.
+
+The licensing audit established a required multi-license structure: the
+original canonical Python tooling is MIT licensed, while the drawDB-derived
+desktop application remains AGPL-3.0-only. The boundary is explicit in the
+README and `LICENSE_SCOPE.md`; the application is not incorrectly advertised as
+MIT.
+
+### How It Was Verified
+
+```bash
+$HOME/.venvs/erd-tool/bin/python -m pytest
+cd desktop
+npm ci
+npm run verify:release
+npm audit --omit=dev
+npm run dist:desktop:mac:arm64
+```
+
+Results: 119 Python tests and 115 desktop tests pass; lint and all renderer/
+Electron builds pass; the production dependency audit reports zero known
+vulnerabilities; the generated executable is ARM64; and Playwright launched the
+packaged app, observed title `ERD Tool`, and confirmed Snowflake UI availability.
+
 ## 2026-07-11 — Working SQLite-to-Snowflake ERD application
 
 ### What Was Built

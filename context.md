@@ -2,64 +2,52 @@
 
 ## Snapshot
 
-- Mode: 2, with explicit autonomous delivery authorization for this milestone.
-- Current state: working Snowflake-focused ERD application across this repository
-  and the public `/Users/lee/projects/drawdb` fork.
-- Canonical model v1 is immutable, deterministic, credential-free, and supports
-  multiple Snowflake namespaces, tables, ordered columns, mapped types,
-  PK/UQ/FK constraints, relationships, defaults, and comments.
-- CLI supports Snowflake DDL import/render, read-only SQLite introspection,
-  strict project validation, and serving the built editor over loopback HTTP.
-- The drawDB fork supports Snowflake editing, canonical JSON open/save, local
-  persistence, ELK auto-layout, DDL preview, multi-schema models, and legacy
-  namespace migration to `MODEL.PUBLIC`.
-- Snowflake constraints are always emitted as informational `NOT ENFORCED`;
-  foreign keys are deferred with `ALTER TABLE`, so cycles and self-references
-  work. The application never adds `RELY` automatically.
-- Exact foundations: drawDB upstream base
-  `b24ad20b6588b9b99609e8a03b87efa7b28cf245`; runtime `elkjs@0.11.1` with
-  evaluated source pin `87f373f5697675f94de210f7d07170d7f2f97391` recorded in
-  the fork. AGPL-3.0/EPL-2.0 notices and patch history are preserved.
-- Local Snowflake access remains operator-only key-pair authentication under
-  ignored machine-local configuration; no application credential surface exists.
+- Current state: ERD Tool v0.1.0 source release candidate on branch
+  `agent/open-source-mac-release`.
+- The completed Electron application is now versioned in this repository under
+  `desktop/`; the former sibling-repository runtime dependency is gone.
+- Apple Silicon macOS is the validated release target. Linux and Windows
+  packaging remain future release gates.
+- The canonical Python model/CLI is MIT licensed. The drawDB-derived desktop
+  application remains AGPL-3.0-only. `LICENSE_SCOPE.md` documents the boundary.
+- The canonical model is deterministic and credential-free. The desktop app
+  supports local project files, ELK layout, Snowflake DDL, machine-local
+  Snowflake profiles, live metadata browsing, and Snowflake reverse engineering.
+- Snowflake PK/UQ/FK constraints are emitted as informational `NOT ENFORCED`;
+  ERD Tool never adds `RELY` automatically.
 
 ## What's Happening Now
 
 ### Recently Completed
 
-- Reverse engineered the official Chinook SQLite database into 11 tables,
-  64 columns, 11 keys/relationships, and a canonical ER project.
-- Forward engineered the generated structure into live
-  `ERD_TOOL_CHINOOK.PUBLIC`. Information Schema verified 11 tables, 64 columns,
-  11 primary keys, 11 foreign keys, and zero enforced constraints.
-- Exercised the real browser workflow: import, edit/rename, ELK layout, DDL
-  preview, download, local persistence, reload, and a two-schema CLI-to-browser
-  round trip.
-- Repaired all material independent-review findings, including SQLite affinity
-  and FK edges, quote-aware Snowflake defaults/comments, legal identifiers,
-  cyclic FKs, multi-schema projection, validation parity, legacy projects,
-  layout persistence/undo, and Snowflake type bounds/defaults.
-- Verification is green: 119 Python tests; 46 drawDB unit tests; ESLint; Vite
-  production build; real Playwright cross-repository flow; Agent-Orch doctor;
-  live Snowflake metadata verification; and credential scans.
-- Added the previously missing importable markdown-heading guidance API. The
-  JSON-formatted `.yaml` playbook template is intentionally retained because
-  JSON is valid YAML and the existing Agent-Orch/template references depend on
-  that stable path.
+- Consolidated the modified drawDB application into `desktop/` with its AGPL
+  license, upstream attribution, patch history, and third-party notices.
+- Branded the Electron package as ERD Tool 0.1.0 and added in-app links to
+  source and license notices.
+- Added a root MIT license for original canonical tooling plus explicit public
+  licensing, security, contribution, conduct, changelog, and release docs.
+- Added Python/desktop CI, Dependabot, and an unsigned Apple Silicon packaging
+  workflow.
+- Made tutorials portable and removed all development-machine paths from
+  public getting-started instructions.
+- Validated 119 Python tests; 115 desktop tests; lint; web, desktop, and
+  Electron builds; zero production dependency vulnerabilities; ARM64 DMG/ZIP
+  packaging; and a packaged-app Playwright launch showing the ERD Tool editor
+  with Snowflake available.
 
 ### Decisions Locked
 
-- `erd-tool` owns canonical semantics, SQLite/Snowflake translation, project
-  validation, CLI, and local serving; the drawDB fork owns editor projection and
-  interaction; elkjs owns position calculation only.
-- Structure migration is the required gate. Row-data movement remains optional
-  and was not added.
-- Snowflake migrations in drawDB's legacy version-diff feature are disabled;
-  canonical project DDL is the authoritative Snowflake export path.
-- Partial SQLite unique indexes are rejected in v1 instead of being silently
-  strengthened to unconditional uniqueness.
+- Do not describe the desktop application as MIT. It is a drawDB derivative and
+  must remain AGPL unless the relevant upstream copyright holders authorize a
+  relicense.
+- v0.1.0 is unsigned and not notarized. Signing/notarization is a later release
+  decision, not a hidden claim in this source release.
+- Structure engineering is the delivered boundary; row-data movement is not
+  part of v0.1.0.
 
 ### Next Actions Queue
 
-1. Future optional work: live Snowflake metadata reverse engineering and row-data
-   copy; neither is required for this completed structural milestone.
+1. Review and merge the open-source Mac release pull request.
+2. Decide whether the first downloadable public binary should be signed and
+   notarized before publishing a GitHub release.
+3. Validate Linux and Windows only when those platforms become active targets.

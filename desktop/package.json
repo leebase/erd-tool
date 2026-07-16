@@ -1,0 +1,195 @@
+{
+  "name": "erd-tool-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "productName": "ERD Tool",
+  "description": "Installable data modeling application with SQLite and Snowflake engineering workflows.",
+  "author": "Lee Harrington",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/leebase/erd-tool#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leebase/erd-tool.git",
+    "directory": "desktop"
+  },
+  "bugs": {
+    "url": "https://github.com/leebase/erd-tool/issues"
+  },
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:desktop-renderer": "vite build --base ./ --outDir dist-desktop",
+    "build:electron": "vite build --config vite.electron.config.js",
+    "build:desktop": "npm run build:desktop-renderer && npm run build:electron",
+    "start:electron": "npm run build:desktop && electron .",
+    "package:desktop": "npm run build:desktop && electron-builder --dir --publish never",
+    "dist:desktop": "npm run build:desktop && electron-builder --publish never",
+    "dist:desktop:mac": "npm run build:desktop && electron-builder --mac --publish never",
+    "dist:desktop:mac:arm64": "npm run build:desktop && electron-builder --mac dmg zip --arm64 --publish never",
+    "dist:desktop:linux": "npm run build:desktop && electron-builder --linux --publish never",
+    "dist:desktop:win": "npm run build:desktop && electron-builder --win --publish never",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "node --test src/erdTool/projectAdapter.test.js src/erdTool/elkLayout.test.js tests/*.test.mjs",
+    "test:browser": "node --test src/erdTool/browserFlow.test.js",
+    "test:electron": "node --test tests/electron-runtime.test.mjs",
+    "verify:ss002": "npm run test && npm run lint && npm run build && npm run build:desktop",
+    "verify:ss012": "npm run test && npm run lint && npm run build && npm run build:desktop",
+    "verify:release": "npm run test && npm run lint && npm run build && npm run build:desktop"
+  },
+  "build": {
+    "appId": "com.leebase.erdtool",
+    "productName": "ERD Tool",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist-installers"
+    },
+    "asar": true,
+    "files": [
+      "dist-desktop/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "LICENSE",
+      "README.md",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.cjs"
+    },
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "README.md",
+        "to": "README.md"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "identity": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "sign": false
+    },
+    "linux": {
+      "category": "Development",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-${os}-${arch}-setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-${os}-${arch}-portable.${ext}"
+    }
+  },
+  "dependencies": {
+    "@dbml/core": "^3.13.9",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@douyinfe/semi-ui": "^2.77.1",
+    "@lexical/react": "^0.12.5",
+    "@monaco-editor/react": "^4.7.0",
+    "@vercel/analytics": "^1.2.2",
+    "axios": "^1.16.0",
+    "dexie": "^3.2.4",
+    "dexie-react-hooks": "^1.1.7",
+    "elkjs": "0.11.1",
+    "file-saver": "^2.0.5",
+    "framer-motion": "^10.18.0",
+    "html-to-image": "1.11.11",
+    "i18next": "^23.11.4",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "jsonschema": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "lexical": "^0.12.5",
+    "lodash": "^4.18.1",
+    "luxon": "^3.7.1",
+    "nanoid": "^5.1.5",
+    "node-sql-parser": "^5.4.0",
+    "oracle-sql-parser": "^0.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hotkeys-hook": "^4.4.1",
+    "react-i18next": "^14.1.1",
+    "react-router-dom": "^6.30.4",
+    "react-tweet": "^3.3.1",
+    "smol-toml": "^1.7.0",
+    "snowflake-sdk": "^3.1.0",
+    "usehooks-ts": "^3.1.0",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.14",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^6.0.3",
+    "electron": "40.10.2",
+    "electron-builder": "^26.0.12",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "playwright": "1.61.1",
+    "postcss": "^8.5.14",
+    "prettier": "3.2.5",
+    "tailwindcss": "^4.0.14",
+    "vite": "^8.1.0"
+  }
+}

@@ -1,121 +1,114 @@
 # ERD Tool
 
-Autonomous mission workspace for a professional database modeling studio.
+ERD Tool is a local-first data modeling application for reverse engineering,
+editing, arranging, and forward engineering database structures. The current
+release focuses on macOS and Snowflake while preserving an offline canonical
+project format.
 
-## Working application
+The application can:
 
-ERD Tool now combines this repository's canonical model/import/export CLI with
-the sibling public drawDB fork at `/Users/lee/projects/drawdb`.
+- reverse engineer SQLite databases into editable ER diagrams;
+- connect directly to Snowflake with password, key-pair, or browser SSO
+  authentication;
+- reverse engineer Snowflake databases and schemas;
+- edit tables, columns, keys, relationships, comments, and layout;
+- automatically arrange diagrams with ELK;
+- save portable, credential-free `.erd.json` project files; and
+- generate Snowflake DDL with informational `NOT ENFORCED` constraints.
+
+The Chinook acceptance workflow has been proven end to end: 11 SQLite tables,
+64 columns, 11 primary keys, and 11 foreign keys were forward engineered into
+Snowflake and reverse engineered back into the editor.
+
+> **Release status:** v0.1.0 is an unsigned source release tested on Apple
+> Silicon macOS. Linux and Windows packaging are present but are not release
+> gates yet.
+
+## Run the Mac application from source
+
+Prerequisites: Node.js 22 or newer and npm.
 
 ```bash
-# Reverse engineer a local SQLite database into a portable project.
-PYTHONPATH=src python3 -m erd_tool.cli sqlite-import /path/to/chinook.db \
-  --name Chinook --catalog ERD_TOOL_DEMO --schema CHINOOK \
+git clone https://github.com/leebase/erd-tool.git
+cd erd-tool/desktop
+npm ci
+npm run start:electron
+```
+
+The Electron window is the application; there is no local web address to open.
+
+Build an unsigned Apple Silicon installer and ZIP:
+
+```bash
+cd desktop
+npm run dist:desktop:mac:arm64
+```
+
+Artifacts are written to `desktop/dist-installers/`. Because v0.1.0 is not
+signed or notarized, macOS may require an explicit **Open** from Finder's
+context menu.
+
+## Snowflake connections
+
+Open **Snowflake** in the application and create a machine-local profile. ERD
+Tool supports password, key-pair, and external-browser SSO authentication.
+Connection secrets remain in the operating system's local application data and
+are never written to an ERD project file. Use a least-privileged Snowflake role
+with access only to the databases and schemas you intend to model.
+
+## Canonical command-line tools
+
+The MIT-licensed Python package provides deterministic import, validation, and
+DDL workflows independently of the desktop editor.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+
+erd-tool sqlite-import /path/to/chinook.db \
+  --name Chinook --catalog ERD_TOOL_DEMO --schema PUBLIC \
   --output /tmp/chinook.erd.json
-
-# Render standard-table Snowflake DDL. PK/FK/UNIQUE are informational.
-PYTHONPATH=src python3 -m erd_tool.cli render-ddl \
-  /tmp/chinook.erd.json --output /tmp/chinook.snowflake.sql
-
-# Build and serve the approved drawDB editor fork.
-(cd /Users/lee/projects/drawdb && npm ci && npm run build)
-PYTHONPATH=src python3 -m erd_tool.cli serve
+erd-tool project-check /tmp/chinook.erd.json
+erd-tool render-ddl /tmp/chinook.erd.json \
+  --output /tmp/chinook.snowflake.sql
 ```
 
-Open `http://127.0.0.1:8765/editor`, choose Snowflake, then use **Open ERD
-Project** to load the generated JSON. The editor supports table/column edits,
-dragging, ELK automatic layout, project save, local browser persistence, and a
-Snowflake DDL preview.
+See the [Chinook walkthrough](docs/tutorials/sqlite-to-snowflake-chinook.md)
+for the complete structural round trip.
 
-The recommended structural demonstration uses the operator-downloaded Chinook
-database from the [SQLite Tutorial sample page](https://www.sqlitetutorial.net/sqlite-sample-database/).
-Row-data copying is intentionally optional; the acceptance gate is structure,
-mapped Snowflake types, legal identifiers, informational relationships, and a
-readable ER model.
+## Repository layout
 
-The first production milestone is Snowflake-focused:
+- `src/erd_tool/` — canonical model, CLI, SQLite import, and Snowflake DDL tools.
+- `desktop/` — Electron/React visual editor derived from drawDB.
+- `tests/` and `desktop/tests/` — deterministic Python and desktop test suites.
+- `docs/` — project contracts, tutorials, and delivery evidence.
 
-- Connect to Snowflake.
-- Reverse engineer existing schemas.
-- Produce attractive editable ER diagrams.
-- Save reusable project files.
-- Generate Snowflake DDL.
-- Support successful round-trip engineering.
+## Security and privacy
 
-## Local Snowflake CLI Access
+ERD Tool is local-first. Project files contain the database model and diagram
+layout, not passwords, private keys, account tokens, session identifiers, or
+machine-local connection profiles. Please report vulnerabilities according to
+[SECURITY.md](SECURITY.md).
 
-The local `erd-tool` Snowflake CLI connection uses key-pair authentication and
-is named `erd-tool`. It is intentionally machine-local: connection details,
-the private key, and any credentials remain under the ignored `.snowflake/`
-directory or the owner-only Snowflake CLI configuration directory.
+## Contributing
 
-Verify the local connection before using a future live-metadata adapter:
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), the
+[Code of Conduct](CODE_OF_CONDUCT.md), and the licensing boundary below before
+opening a pull request.
 
-```bash
-snow connection test --connection erd-tool
-snow sql --connection erd-tool --query \
-  'select current_user(), current_role(), current_account()'
-```
+## Licensing
 
-Do not add Snowflake account identifiers, passwords, private keys, session
-tokens, or connection settings to project files, fixtures, tests, or commits.
-The application remains credential-free and offline-first. The operator-only
-connection was used to prove generated Chinook structures in a live Snowflake
-database; it is not read by the application or stored in project files.
+This is a multi-license repository:
 
-## Project Files
+- Lee-authored Python tooling and other root-level original work are available
+  under the [MIT License](LICENSE).
+- The `desktop/` application is a derivative of drawDB and remains licensed
+  under the [GNU AGPL v3](desktop/LICENSE).
 
-Project files are local, JSON-compatible files for saving the database model
-itself. They are intended to let a database modeler reopen the same schema model
-later without requiring Snowflake credentials, network access, or a cloud
-service.
+The desktop application cannot be relicensed as MIT without permission from
+all relevant drawDB copyright holders. See [LICENSE_SCOPE.md](LICENSE_SCOPE.md)
+and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the exact boundary and
+attributions.
 
-The project file envelope is versioned independently from the physical model:
-
-```json
-{
-  "project_version": "1",
-  "physical_model": {
-    "model_version": "1",
-    "name": "operations-domain-model",
-    "namespaces": [],
-    "tables": [],
-    "relationships": []
-  },
-  "diagram_layout": {
-    "nodes": {},
-    "viewport": {"x": 0, "y": 0, "zoom": 1}
-  }
-}
-```
-
-`physical_model` preserves namespaces, tables, column order, mapped data types,
-primary keys, unique constraints, foreign keys, relationships, nullability,
-defaults, and comments. `diagram_layout` separately preserves table positions
-and viewport state, so visual edits never become a second schema source.
-
-Project files intentionally do not store live Snowflake access details or
-machine-local state: account, warehouse, role, connection, session, credentials,
-filesystem paths, timestamps, generated smoke evidence, or host-specific values.
-Theme, selection, expanded/collapsed state, and undo history are deliberately
-not persisted. Relationship routes are derived from the canonical endpoints.
-
-Loading is strict in the current contract. Unsupported project versions, missing
-required fields, malformed field types, and unexpected fields fail loudly
-instead of producing a partial model. Project-file round trips compare decoded
-JSON values, not byte-for-byte formatting, so indentation and member ordering in
-the raw file are not meaningful when the loaded value is the same.
-
-The drawDB fork provides browser open/save, local persistence, ELK layout, and
-Snowflake DDL preview. Connection-profile management, data copying, recent-file
-lists, and backups remain outside this structural milestone.
-
-## Foundation Strategy
-
-This project should evaluate mature open-source foundations before building new
-components. Initial candidates include drawDB for visual modeling,
-snowflake-dbml-generator for Snowflake metadata extraction, and Graphviz, ELK,
-or Mermaid-style tooling for layout and rendering.
-
-Any adopted foundation needs documented license, upstream, local modifications,
-fork/adoption strategy, and upstream synchronization plan.
+Project demonstration: [ERD Tool](https://nginx.leebasehome.com/erd-tool/)

@@ -1,0 +1,163 @@
+import { nanoid } from "nanoid";
+import { Cardinality, Constraint, DB } from "../../data/constants.js";
+import { dbToTypes } from "../../data/datatypes.js";
+
+const affinity = {
+  [DB.ORACLESQL]: new Proxy(
+    {
+      INT: "INTEGER",
+      NUMERIC: "NUMBER",
+      DECIMAL: "NUMBER",
+      CHARACTER: "CHAR",
+    },
+    { get: (target, prop) => (prop in target ? target[prop] : "BLOB") },
+  ),
+  [DB.GENERIC]: new Proxy(
+    {
+      INTEGER: "INT",
+      MEDIUMINT: "INTEGER",
+    },
+    { get: (target, prop) => (prop in target ? target[prop] : "BLOB") },
+  ),
+};
+
+export function fromOracleSQL(ast, diagramDb = DB.GENERIC) {
+  const tables = [];
+  const relationships = [];
+  const enums = [];
+
+  const parseSingleStatement = (e) => {
+    if (e.operation === "create") {
+      if (e.object === "table") {
+        const table = {};
+        table.name = e.name.name;
+        table.comment = "";
+        table.color = "#175e7a";
+        table.fields = [];
+        table.indices = [];
+        table.uniqueConstraints = [];
+        table.id = nanoid();
+        e.table.relational_properties.forEach((d) => {
+          if (d.resource === "column") {
+            const field = {};
+            field.id = nanoid();
+            field.name = d.name;
+
+            let type = d.type.type.toUpperCase();
+            if (!dbToTypes[diagramDb][type]) {
+              type = affinity[diagramDb][type];
+            }
+            field.type = type;
+
+            if (d.type.scale && d.type.precision) {
+              field.size = d.type.precision + "," + d.type.scale;
+            } else if (d.type.size || d.type.precision) {
+              field.size = d.type.size || d.type.precision;
+            }
+
+            field.comment = "";
+            field.check = "";
+            field.default = "";
+            field.unique = false;
+            field.increment = false;
+            field.notNull = false;
+            field.primary = false;
+
+            for (const c of d.constraints) {
+              if (c.constraint.primary_key === "primary key")
+                field.primary = true;
+              if (c.constraint.not_null === "not null") field.notNull = true;
+              if (c.constraint.unique === "unique") field.unique = true;
+            }
+
+            if (d.identity) {
+              field.increment = true;
+            }
+
+            // TODO: reconstruct default when implemented in parser
+            if (d.default) {
+              field.default = JSON.stringify(d.default.expr);
+            }
+
+            table.fields.push(field);
+          } else if (d.resource === "constraint") {
+            if (
+              d.constraint?.unique === "unique" &&
+              Array.isArray(d.constraint.columns)
+            ) {
+              const fields = d.constraint.columns;
+              const name =
+                d.name && Boolean(d.name.trim())
+                  ? d.name
+                  : `${table.name}_unique_${table.uniqueConstraints.length}`;
+              table.uniqueConstraints.push({ name, fields });
+              table.uniqueConstraints.forEach((u, j) => {
+                u.id = j;
+              });
+              return;
+            }
+
+            if (!d.constraint?.reference) return;
+
+            const relationship = {};
+            const startFieldNames = d.constraint.columns;
+            const endFieldNames = d.constraint.reference.columns;
+            const startFieldName = startFieldNames[0];
+            const endTableName = d.constraint.reference.object.name;
+
+            const endTable = tables.find((t) => t.name === endTableName);
+            if (!endTable) return;
+
+            const fieldPairs = [];
+            for (let i = 0; i < startFieldNames.length; i++) {
+              const sf = table.fields.find(
+                (f) => f.name === startFieldNames[i],
+              );
+              const ef = endTable.fields.find(
+                (f) => f.name === endFieldNames[i],
+              );
+              if (!sf || !ef) break;
+              fieldPairs.push({ startFieldId: sf.id, endFieldId: ef.id });
+            }
+            if (fieldPairs.length !== startFieldNames.length) return;
+
+            const startField = table.fields.find(
+              (f) => f.name === startFieldName,
+            );
+
+            relationship.id = nanoid();
+            relationship.startTableId = table.id;
+            relationship.startFieldId = fieldPairs[0].startFieldId;
+            relationship.endTableId = endTable.id;
+            relationship.endFieldId = fieldPairs[0].endFieldId;
+            relationship.fields = fieldPairs;
+            relationship.updateConstraint = Constraint.NONE;
+            relationship.name =
+              d.name && Boolean(d.name.trim())
+                ? d.name
+                : `fk_${table.name}_${startFieldName}_${endTableName}`;
+            relationship.deleteConstraint =
+              d.constraint.reference.on_delete &&
+              Boolean(d.constraint.reference.on_delete.trim())
+                ? d.constraint.reference.on_delete[0].toUpperCase() +
+                  d.constraint.reference.on_delete.substring(1)
+                : Constraint.NONE;
+
+            if (startField.unique) {
+              relationship.cardinality = Cardinality.ONE_TO_ONE;
+            } else {
+              relationship.cardinality = Cardinality.MANY_TO_ONE;
+            }
+
+            relationships.push(relationship);
+          }
+        });
+        tables.push(table);
+      }
+    }
+  };
+
+  ast.forEach((e) => parseSingleStatement(e));
+
+  return { tables, relationships, enums };
+}

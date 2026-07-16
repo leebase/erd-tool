@@ -2,24 +2,25 @@
 
 ## Milestone state
 
-The first working ERD application milestone is complete. The product now uses
-the approved drawDB fork and elkjs foundation around an authoritative canonical
-model. It can reverse engineer SQLite (including Chinook), import constrained
-Snowflake DDL, edit and lay out an ER model in the browser, persist canonical
-projects with separate layout, and generate deterministic legal Snowflake DDL
-whose PK/UQ/FK constraints are informational `NOT ENFORCED`.
+ERD Tool 0.1.0 is code-complete as an open-source Apple Silicon macOS source
+release candidate. The installable Electron app, canonical Python tooling,
+tests, documentation, and release automation now live in one repository.
 
-The decisive live gate passed in Snowflake database `ERD_TOOL_CHINOOK`, schema
-`PUBLIC`: 11 tables, 64 columns, 11 primary keys, 11 foreign keys, and zero
-enforced constraints. Data copying was intentionally not implemented.
+The product can reverse engineer SQLite and live Snowflake schemas, edit and
+automatically arrange ER diagrams, save credential-free project files, and
+generate Snowflake DDL. The proven Chinook gate remains 11 tables, 64 columns,
+11 primary keys, 11 foreign keys, and zero enforced constraints.
 
-Verification is green across 119 Python tests, 46 drawDB unit tests, production
-build/lint, the real two-repository Playwright workflow, manual in-app browser
-smoke, Agent-Orch doctor, secret scans, and a final independent PASS verdict.
+Verification is green across 119 Python tests, 115 desktop tests, lint, all
+production builds, a zero-vulnerability production npm audit, Apple Silicon
+DMG/ZIP packaging, and a smoke launch of the packaged application.
+
+## License boundary
+
+The root canonical tooling is MIT licensed. `desktop/` derives from drawDB and
+is AGPL-3.0-only. The packaged application is therefore AGPL, not MIT.
 
 ## Next milestone
 
-After this release is committed and pushed, the next product decision is whether
-to add live Snowflake metadata reverse engineering, row-data movement, or deeper
-editor capabilities. None is required to operate or demonstrate the delivered
-SQLite-to-Snowflake structural workflow.
+Merge the open-source release pull request. Then choose whether to invest in
+Apple signing/notarization or move next to Linux/Windows release validation.
