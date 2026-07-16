@@ -1,6 +1,10 @@
 node_modules/
 dist/
 build/
+!desktop/build/
+!desktop/build/icon.icns
+!desktop/build/icon.ico
+!desktop/build/icon.png
 coverage/
 .coverage
 htmlcov/
