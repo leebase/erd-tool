@@ -73,3 +73,17 @@
   findings, then update AgentFlow handoff documents.
 - [x] Commit and push verified changes in both repositories (`erd-tool`
   `d88dc51`; drawDB `7601f6a`, followed by this closeout handoff).
+
+## Recovery sprint — conversational schema authoring
+
+- [x] Rebuild SS-014 from scratch in the drawDB desktop fork after the synced
+  implementation files were lost.
+- [x] Restore strict logical proposals, reviewable canvas diffs, explicit
+  Accept/Edit/Reject, undo/redo, dirty/save integration, and safe error paths.
+- [x] Restore the allowlisted Electron provider bridge and OS-encrypted OpenAI
+  API-key lifecycle without adding credentials to projects or renderer storage.
+- [x] Add deterministic provider/core/UI/runtime tests and pass the full
+  146-test suite, lint, desktop/Electron builds, browser flow, packaged Electron
+  smoke, credential scan, and diff validation.
+- [x] Commit and push the complete verified drawDB desktop feature set to
+  `origin/main` (`fbe78fa`, following `09d7860`).

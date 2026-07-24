@@ -20,13 +20,26 @@
   `b24ad20b6588b9b99609e8a03b87efa7b28cf245`; runtime `elkjs@0.11.1` with
   evaluated source pin `87f373f5697675f94de210f7d07170d7f2f97391` recorded in
   the fork. AGPL-3.0/EPL-2.0 notices and patch history are preserved.
-- Local Snowflake access remains operator-only key-pair authentication under
-  ignored machine-local configuration; no application credential surface exists.
+- Local Snowflake operator access remains key-pair authenticated under ignored
+  machine-local configuration. Desktop connection and OpenAI API credentials
+  are separate, local-only values encrypted through Electron `safeStorage` and
+  excluded from projects, renderer persistence, logs, tests, and snapshots.
 
 ## What's Happening Now
 
 ### Recently Completed
 
+- Rebuilt the lost SS-014 conversational schema-authoring feature in the
+  `/Users/lee/projects/drawdb` desktop fork. The rebuild includes strict logical
+  model proposals, OpenAI Responses API Structured Outputs, encrypted local API
+  key handling, allowlisted Electron IPC, a docked review panel, canvas diffs,
+  explicit Accept/Edit/Reject, and undo/redo plus save-state integration.
+- Reverified the rebuilt desktop fork with 146/146 automated tests, ESLint,
+  production desktop/Electron builds, the real browser workflow, a packaged
+  Electron UI smoke, credential scanning, and `git diff --check`.
+- Published the complete verified desktop feature set to drawDB `main` in
+  commit `fbe78fa`, following the previously local Snowflake export commit
+  `09d7860`.
 - Reverse engineered the official Chinook SQLite database into 11 tables,
   64 columns, 11 keys/relationships, and a canonical ER project.
 - Forward engineered the generated structure into live
@@ -61,5 +74,5 @@
 
 ### Next Actions Queue
 
-1. Future optional work: live Snowflake metadata reverse engineering and row-data
-   copy; neither is required for this completed structural milestone.
+1. Future optional work: row-data copy; it is not required for this completed
+   structural milestone.
