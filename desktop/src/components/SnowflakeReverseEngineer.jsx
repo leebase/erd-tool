@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Banner,
   Button,
-  Input,
   Modal,
   Select,
   Spin,
@@ -12,32 +11,14 @@ import {
 import {
   connectDesktopSnowflake,
   disconnectDesktopSnowflake,
+  listDesktopConnections,
   listDesktopSnowflakeDatabases,
-  listDesktopSnowflakeProfiles,
   listDesktopSnowflakeSchemas,
   listDesktopSnowflakeTables,
   reverseEngineerDesktopSnowflake,
 } from "../erdTool/desktopBridge";
 import { layoutDiagram } from "../erdTool/elkLayout";
 import { snowflakeMetadataToDiagram } from "../erdTool/snowflakeMetadata";
-
-const AUTHENTICATORS = [
-  { value: "EXTERNALBROWSER", label: "Browser SSO" },
-  { value: "SNOWFLAKE", label: "Username and password" },
-  { value: "USERNAME_PASSWORD_MFA", label: "Username, password, and MFA" },
-  { value: "SNOWFLAKE_JWT", label: "Key-pair authentication" },
-];
-
-const emptyManualConnection = {
-  account: "",
-  username: "",
-  authenticator: "EXTERNALBROWSER",
-  password: "",
-  warehouse: "",
-  role: "",
-  privateKeyPath: "",
-  privateKeyPass: "",
-};
 
 function messageFor(error, fallback) {
   return typeof error?.message === "string" && error.message.trim()
@@ -60,10 +41,7 @@ export default function SnowflakeReverseEngineer({
   readOnly,
 }) {
   const [profiles, setProfiles] = useState([]);
-  const [mode, setMode] = useState("manual");
-  const [profileName, setProfileName] = useState("");
-  const [profilePassphrase, setProfilePassphrase] = useState("");
-  const [manual, setManual] = useState(emptyManualConnection);
+  const [profileId, setProfileId] = useState("");
   const [session, setSession] = useState(null);
   const [databases, setDatabases] = useState([]);
   const [schemas, setSchemas] = useState([]);
@@ -75,23 +53,25 @@ export default function SnowflakeReverseEngineer({
   const [error, setError] = useState("");
 
   const selectedProfile = useMemo(
-    () => profiles.find((profile) => profile.name === profileName) ?? null,
-    [profileName, profiles],
+    () => profiles.find((profile) => profile.id === profileId) ?? null,
+    [profileId, profiles],
   );
 
   useEffect(() => {
     if (!visible) return undefined;
     let active = true;
     setError("");
-    void listDesktopSnowflakeProfiles()
+    void listDesktopConnections()
       .then((foundProfiles) => {
         if (!active) return;
-        setProfiles(foundProfiles);
-        if (foundProfiles.length) {
-          const preferred =
-            foundProfiles.find((profile) => profile.isDefault) ?? foundProfiles[0];
-          setMode("profile");
-          setProfileName(preferred.name);
+        const snowflakeProfiles = foundProfiles.filter(
+          (profile) =>
+            profile.provider === "snowflake" &&
+            profile.capabilities?.reverseEngineering,
+        );
+        setProfiles(snowflakeProfiles);
+        if (snowflakeProfiles.length) {
+          setProfileId(snowflakeProfiles[0].id);
         }
       })
       .catch((profileError) => {
@@ -127,8 +107,6 @@ export default function SnowflakeReverseEngineer({
 
   const close = async () => {
     await disconnect();
-    setProfilePassphrase("");
-    setManual((current) => ({ ...current, password: "", privateKeyPass: "" }));
     setError("");
     onClose();
   };
@@ -175,7 +153,9 @@ export default function SnowflakeReverseEngineer({
       setSchemas(foundSchemas);
       const preferredSchema =
         foundSchemas.find(
-          (item) => item.name === selectedProfile?.schema && item.supported !== false,
+          (item) =>
+            item.name === selectedProfile?.settings?.schema &&
+            item.supported !== false,
         ) ??
         foundSchemas.find((item) => item.name === "PUBLIC" && item.supported !== false) ??
         foundSchemas.find((item) => item.supported !== false);
@@ -194,14 +174,10 @@ export default function SnowflakeReverseEngineer({
     setBusy(true);
     setError("");
     try {
-      const request =
-        mode === "profile"
-          ? {
-              mode: "profile",
-              profileName,
-              ...(profilePassphrase ? { privateKeyPass: profilePassphrase } : {}),
-            }
-          : { mode: "manual", ...manual };
+      const request = {
+        mode: "savedProfile",
+        profileId,
+      };
       const connectedSession = await connectDesktopSnowflake(request);
       setSession(connectedSession);
       const foundDatabases = await listDesktopSnowflakeDatabases(
@@ -210,7 +186,9 @@ export default function SnowflakeReverseEngineer({
       setDatabases(foundDatabases);
       const preferredDatabase =
         foundDatabases.find(
-          (item) => item.name === selectedProfile?.database && item.supported !== false,
+          (item) =>
+            item.name === selectedProfile?.settings?.database &&
+            item.supported !== false,
         ) ?? foundDatabases.find((item) => item.supported !== false);
       if (preferredDatabase) {
         setDatabase(preferredDatabase.name);
@@ -221,7 +199,9 @@ export default function SnowflakeReverseEngineer({
         setSchemas(foundSchemas);
         const preferredSchema =
           foundSchemas.find(
-            (item) => item.name === selectedProfile?.schema && item.supported !== false,
+            (item) =>
+              item.name === selectedProfile?.settings?.schema &&
+              item.supported !== false,
           ) ??
           foundSchemas.find((item) => item.name === "PUBLIC" && item.supported !== false) ??
           foundSchemas.find((item) => item.supported !== false);
@@ -234,8 +214,6 @@ export default function SnowflakeReverseEngineer({
           );
         }
       }
-      setProfilePassphrase("");
-      setManual((current) => ({ ...current, password: "", privateKeyPass: "" }));
     } catch (connectionError) {
       setSession(null);
       setError(messageFor(connectionError, "Could not connect to Snowflake."));
@@ -273,14 +251,7 @@ export default function SnowflakeReverseEngineer({
   const primaryAction = session ? importSelectedTables : connect;
   const primaryDisabled = session
     ? readOnly || !database || !schema || selectedTables.length === 0
-    : mode === "profile"
-      ? !profileName
-      : !manual.account ||
-        !manual.username ||
-        ((manual.authenticator === "SNOWFLAKE" ||
-          manual.authenticator === "USERNAME_PASSWORD_MFA") &&
-          !manual.password) ||
-        (manual.authenticator === "SNOWFLAKE_JWT" && !manual.privateKeyPath);
+    : !profileId;
 
   return (
     <Modal
@@ -307,148 +278,48 @@ export default function SnowflakeReverseEngineer({
         {!session ? (
           <>
             {profiles.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <label className="space-y-1 text-sm">
-                  <span className="font-medium">Connection source</span>
+                  <span className="font-medium">Saved connection</span>
                   <Select
-                    value={mode}
-                    onChange={setMode}
-                    optionList={[
-                      { value: "profile", label: "Snowflake CLI profile" },
-                      { value: "manual", label: "Enter connection details" },
-                    ]}
+                    value={profileId}
+                    onChange={setProfileId}
+                    optionList={profiles.map((profile) => ({
+                      value: profile.id,
+                      label: profile.name,
+                    }))}
                     className="w-full"
                   />
                 </label>
-                {mode === "profile" && (
-                  <label className="space-y-1 text-sm">
-                    <span className="font-medium">Profile</span>
-                    <Select
-                      value={profileName}
-                      onChange={setProfileName}
-                      optionList={profiles.map((profile) => ({
-                        value: profile.name,
-                        label: profile.isDefault
-                          ? `${profile.name} (default)`
-                          : profile.name,
-                      }))}
-                      className="w-full"
-                    />
-                  </label>
-                )}
               </div>
             )}
 
-            {mode === "profile" && selectedProfile ? (
+            {selectedProfile ? (
               <div className="rounded-md border border-gray-200 p-3 dark:border-gray-700">
-                <div className="font-medium">{selectedProfile.account}</div>
-                <div className="mt-1 text-sm text-gray-500">
-                  {selectedProfile.username} · {selectedProfile.authenticator}
-                  {selectedProfile.warehouse ? ` · ${selectedProfile.warehouse}` : ""}
-                  {selectedProfile.role ? ` · ${selectedProfile.role}` : ""}
+                <div className="font-medium">
+                  {selectedProfile.settings.account}
                 </div>
-                {selectedProfile.authenticator === "SNOWFLAKE_JWT" && (
-                  <label className="mt-3 block space-y-1 text-sm">
-                    <span>Private-key passphrase, if required</span>
-                    <Input
-                      mode="password"
-                      value={profilePassphrase}
-                      onChange={setProfilePassphrase}
-                      placeholder="Leave blank for an unencrypted key"
-                    />
-                  </label>
-                )}
+                <div className="mt-1 text-sm text-gray-500">
+                  {selectedProfile.settings.username} ·{" "}
+                  {selectedProfile.settings.authenticator}
+                  {selectedProfile.settings.warehouse
+                    ? ` · ${selectedProfile.settings.warehouse}`
+                    : ""}
+                  {selectedProfile.settings.role
+                    ? ` · ${selectedProfile.settings.role}`
+                    : ""}
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <label className="space-y-1 text-sm">
-                  <span className="font-medium">Account identifier</span>
-                  <Input
-                    value={manual.account}
-                    onChange={(account) => setManual((current) => ({ ...current, account }))}
-                    placeholder="organization-account"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-medium">Username</span>
-                  <Input
-                    value={manual.username}
-                    onChange={(username) =>
-                      setManual((current) => ({ ...current, username }))
-                    }
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-medium">Authentication</span>
-                  <Select
-                    value={manual.authenticator}
-                    onChange={(authenticator) =>
-                      setManual((current) => ({ ...current, authenticator }))
-                    }
-                    optionList={AUTHENTICATORS}
-                    className="w-full"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-medium">Warehouse</span>
-                  <Input
-                    value={manual.warehouse}
-                    onChange={(warehouse) =>
-                      setManual((current) => ({ ...current, warehouse }))
-                    }
-                    placeholder="Optional"
-                  />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span className="font-medium">Role</span>
-                  <Input
-                    value={manual.role}
-                    onChange={(role) => setManual((current) => ({ ...current, role }))}
-                    placeholder="Optional"
-                  />
-                </label>
-                {(manual.authenticator === "SNOWFLAKE" ||
-                  manual.authenticator === "USERNAME_PASSWORD_MFA") && (
-                  <label className="space-y-1 text-sm">
-                    <span className="font-medium">Password</span>
-                    <Input
-                      mode="password"
-                      value={manual.password}
-                      onChange={(password) =>
-                        setManual((current) => ({ ...current, password }))
-                      }
-                    />
-                  </label>
-                )}
-                {manual.authenticator === "SNOWFLAKE_JWT" && (
-                  <>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-medium">Private-key path</span>
-                      <Input
-                        value={manual.privateKeyPath}
-                        onChange={(privateKeyPath) =>
-                          setManual((current) => ({ ...current, privateKeyPath }))
-                        }
-                        placeholder="~/.snowflake/keys/my_key.p8"
-                      />
-                    </label>
-                    <label className="space-y-1 text-sm">
-                      <span className="font-medium">Key passphrase, if required</span>
-                      <Input
-                        mode="password"
-                        value={manual.privateKeyPass}
-                        onChange={(privateKeyPass) =>
-                          setManual((current) => ({ ...current, privateKeyPass }))
-                        }
-                      />
-                    </label>
-                  </>
-                )}
+              <div className="rounded-md border border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700">
+                Add a Snowflake connection from the Connections menu before
+                reverse engineering live metadata.
               </div>
             )}
             <Typography.Text type="tertiary" size="small">
-              Connections live only in Electron&apos;s main process. Passwords, keys, and
-              session tokens are never stored in ERD project files.
+              Saved connections live only behind Electron&apos;s main-process
+              bridge. Passwords, keys, and session tokens are never stored in
+              ERD project files.
             </Typography.Text>
           </>
         ) : (

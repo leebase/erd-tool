@@ -11,6 +11,7 @@ node_modules
 dist
 dist-desktop
 dist-electron
+dist-installers
 dist-ssr
 *.local
 __pycache__/
@@ -27,3 +28,12 @@ __pycache__/
 *.sln
 *.sw?
 .env
+
+# Auto-orch governed-run artifacts (Linux workspace only)
+.agent-orch/
+.agent-orch-scratch/
+
+# Cross-platform sync metadata and local build spillover
+._*
+/main.cjs
+artifacts/user-smoke/*.log

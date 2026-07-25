@@ -10,6 +10,7 @@ const repositoryRoot = path.resolve(
 );
 const packagePath = path.join(repositoryRoot, "package.json");
 const packageLockPath = path.join(repositoryRoot, "package-lock.json");
+const gitIgnorePath = path.join(repositoryRoot, ".gitignore");
 const viteElectronConfigPath = path.join(
   repositoryRoot,
   "vite.electron.config.js",
@@ -19,6 +20,16 @@ const preloadPath = path.join(repositoryRoot, "src", "electron", "preload.ts");
 const linuxIconPath = path.join(repositoryRoot, "build", "icon.png");
 const windowsIconPath = path.join(repositoryRoot, "build", "icon.ico");
 const macIconPath = path.join(repositoryRoot, "build", "icon.icns");
+const windowsNsisArtifactPath = path.join(
+  repositoryRoot,
+  "dist-installers",
+  "ERD Tool-0.1.0-win-x64-setup.exe",
+);
+const windowsPortableArtifactPath = path.join(
+  repositoryRoot,
+  "dist-installers",
+  "ERD Tool-0.1.0-win-x64-portable.exe",
+);
 const packagingConfigCandidates = [
   "electron-builder.json",
   "electron-builder.json5",
@@ -42,6 +53,21 @@ function readText(relativePath) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function assertExecutableArtifact(filePath, label) {
+  const stats = fs.statSync(filePath);
+  const buffer = fs.readFileSync(filePath);
+
+  assert.ok(
+    stats.size > 1024 * 1024,
+    `${label} must be a real packaging artifact`,
+  );
+  assert.equal(
+    buffer.subarray(0, 2).toString("ascii"),
+    "MZ",
+    `${label} must be a Windows executable`,
+  );
 }
 
 function readPngSize(filePath) {
@@ -76,7 +102,10 @@ function getPackagingSource(packageJson = getPackageJson()) {
     });
   }
 
-  if (packageJson.config?.forge && typeof packageJson.config.forge === "object") {
+  if (
+    packageJson.config?.forge &&
+    typeof packageJson.config.forge === "object"
+  ) {
     sources.push({
       name: "package.json#config.forge",
       parsed: packageJson.config.forge,
@@ -155,7 +184,9 @@ function assertPlatformTarget(source, label, platformNames, expectedTargets) {
     `${source.name} must define an explicit ${label} packaging target`,
   );
 
-  const values = collectValues(targetConfig).map((value) => value.toLowerCase());
+  const values = collectValues(targetConfig).map((value) =>
+    value.toLowerCase(),
+  );
   const hasExpectedTarget = expectedTargets.some((target) =>
     values.some((value) => value.includes(target)),
   );
@@ -189,6 +220,18 @@ function configuredArchitectures(platformConfig, targetName) {
 }
 
 describe("SS-012 cross-platform packaging configuration", () => {
+  it("uses the 0.1.0 release identity consistently", () => {
+    const packageJson = getPackageJson();
+    const packageLock = readJson(packageLockPath);
+
+    assert.equal(packageJson.version, "0.1.0");
+    assert.equal(packageLock.version, "0.1.0");
+    assert.equal(packageLock.packages?.[""]?.version, "0.1.0");
+    assert.doesNotMatch(packageJson.version, /^0\.0\.0$/);
+    assert.doesNotMatch(packageLock.version, /^0\.0\.0$/);
+    assert.doesNotMatch(packageLock.packages?.[""]?.version, /^0\.0\.0$/);
+  });
+
   it("keeps packaging Electron-based and wired to the existing drawDB desktop entries", () => {
     const packageJson = getPackageJson();
     const packageLock = readJson(packageLockPath);
@@ -200,7 +243,8 @@ describe("SS-012 cross-platform packaging configuration", () => {
 
     assert.equal(packageJson.main, "dist-electron/main.cjs");
     assert.ok(
-      packageJson.devDependencies?.electron || packageJson.dependencies?.electron,
+      packageJson.devDependencies?.electron ||
+        packageJson.dependencies?.electron,
       "Electron must remain a project dependency for desktop packaging",
     );
     assert.equal(
@@ -223,10 +267,16 @@ describe("SS-012 cross-platform packaging configuration", () => {
     assert.match(viteElectronConfig, /src\/electron\/preload\.ts/);
     assert.match(viteElectronConfig, /outDir:\s*"dist-electron"/);
     assert.match(viteElectronConfig, /formats:\s*\[\s*"cjs"\s*\]/);
-    assert.match(main, /loadFile\(rendererEntry,\s*\{\s*hash:\s*"\/editor"\s*\}\)/);
+    assert.match(
+      main,
+      /loadFile\(rendererEntry,\s*\{\s*hash:\s*"\/editor"\s*\}\)/,
+    );
     assert.match(main, /"dist-desktop"/);
     assert.match(preload, /contextBridge\.exposeInMainWorld/);
-    assert.doesNotMatch(main, /\.loadURL\s*\(|https?:\/\/localhost|127\.0\.0\.1/);
+    assert.doesNotMatch(
+      main,
+      /\.loadURL\s*\(|https?:\/\/localhost|127\.0\.0\.1/,
+    );
   });
 
   it("defines explicit installer targets for macOS, Linux, and Windows", () => {
@@ -237,10 +287,12 @@ describe("SS-012 cross-platform packaging configuration", () => {
       text: sources.map(({ text }) => text).join("\n"),
     };
 
-    assertPlatformTarget(combinedSource, "macOS", ["mac", "macos", "darwin"], [
-      "dmg",
-      "zip",
-    ]);
+    assertPlatformTarget(
+      combinedSource,
+      "macOS",
+      ["mac", "macos", "darwin"],
+      ["dmg", "zip"],
+    );
     assertPlatformTarget(combinedSource, "Linux", ["linux"], ["appimage"]);
     assertPlatformTarget(
       combinedSource,
@@ -260,14 +312,11 @@ describe("SS-012 cross-platform packaging configuration", () => {
       "x64",
     ]);
     assert.deepEqual(configuredTargets(build.linux), ["AppImage"]);
-    assert.deepEqual(configuredArchitectures(build.linux, "AppImage"), [
-      "x64",
-    ]);
+    assert.equal(build.linux.syncDesktopName, true);
+    assert.deepEqual(configuredArchitectures(build.linux, "AppImage"), ["x64"]);
     assert.deepEqual(configuredTargets(build.win), ["nsis", "portable"]);
     assert.deepEqual(configuredArchitectures(build.win, "nsis"), ["x64"]);
-    assert.deepEqual(configuredArchitectures(build.win, "portable"), [
-      "x64",
-    ]);
+    assert.deepEqual(configuredArchitectures(build.win, "portable"), ["x64"]);
   });
 
   it("uses native app icon resources instead of a wide web logo", () => {
@@ -284,7 +333,10 @@ describe("SS-012 cross-platform packaging configuration", () => {
     assert.equal(windowsIcon.readUInt16LE(0), 0);
     assert.equal(windowsIcon.readUInt16LE(2), 1);
     assert.equal(windowsIcon.readUInt16LE(4), 1);
-    assert.equal(windowsIcon.subarray(22, 30).toString("hex"), "89504e470d0a1a0a");
+    assert.equal(
+      windowsIcon.subarray(22, 30).toString("hex"),
+      "89504e470d0a1a0a",
+    );
     assert.equal(macIcon.subarray(0, 4).toString("ascii"), "icns");
     assert.equal(macIcon.readUInt32BE(4), macIcon.length);
     assert.equal(macIcon.subarray(8, 12).toString("ascii"), "ic09");
@@ -300,13 +352,24 @@ describe("SS-012 cross-platform packaging configuration", () => {
 
     assert.ok(
       scripts.some(({ command }) =>
-        /electron-(?:builder|forge)|electron-builder|electron-forge/i.test(command),
+        /electron-(?:builder|forge)|electron-builder|electron-forge/i.test(
+          command,
+        ),
       ),
       "SS-012 must expose an installer packaging script",
     );
-    assert.match(packageJson.scripts["build:desktop-renderer"], /--base \.\/ --outDir dist-desktop/);
-    assert.match(packageJson.scripts["build:electron"], /vite\.electron\.config\.js/);
-    assert.match(packageJson.scripts["build:desktop"], /build:desktop-renderer/);
+    assert.match(
+      packageJson.scripts["build:desktop-renderer"],
+      /--base \.\/ --outDir dist-desktop/,
+    );
+    assert.match(
+      packageJson.scripts["build:electron"],
+      /vite\.electron\.config\.js/,
+    );
+    assert.match(
+      packageJson.scripts["build:desktop"],
+      /build:desktop-renderer/,
+    );
     assert.match(packageJson.scripts["build:desktop"], /build:electron/);
     for (const scriptName of [
       "package:desktop",
@@ -331,18 +394,27 @@ describe("SS-012 cross-platform packaging configuration", () => {
     const packageJson = getPackageJson();
     const sourceText = packagingText(packageJson);
     const sensitiveScriptText = packageManagerScripts(packageJson)
-      .filter(({ name }) => /(?:pack|package|dist|installer|electron|desktop|ss012)/i.test(name))
+      .filter(({ name }) =>
+        /(?:pack|package|dist|installer|electron|desktop|ss012)/i.test(name),
+      )
       .map(({ name, command }) => `${name}: ${command}`)
       .join("\n");
 
     assert.doesNotMatch(sourceText, credentialPattern);
     assert.doesNotMatch(sensitiveScriptText, credentialPattern);
-    assert.doesNotMatch(sourceText, /process\.env\.[A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|KEY|CREDENTIAL)[A-Z0-9_]*/i);
-    assert.doesNotMatch(sourceText, /extra(?:Files|Resources)[\s\S]*(?:\.env|credentials?|secrets?)/i);
+    assert.doesNotMatch(
+      sourceText,
+      /process\.env\.[A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|KEY|CREDENTIAL)[A-Z0-9_]*/i,
+    );
+    assert.doesNotMatch(
+      sourceText,
+      /extra(?:Files|Resources)[\s\S]*(?:\.env|credentials?|secrets?)/i,
+    );
   });
 
   it("creates unique artifacts and bundles the required license and source notices", () => {
     const build = getPackageJson().build;
+    const gitIgnore = fs.readFileSync(gitIgnorePath, "utf8");
     const requiredNotices = ["LICENSE", "README.md", "THIRD_PARTY_NOTICES.md"];
     const includedFiles = build.files ?? [];
     const extraResourceSources = (build.extraResources ?? []).map(
@@ -350,7 +422,17 @@ describe("SS-012 cross-platform packaging configuration", () => {
     );
 
     assert.equal(build.asar, true);
-    assert.equal(build.mac.identity, null, "SS-012 macOS packages stay unsigned");
+    assert.equal(build.directories.output, "dist-installers");
+    assert.match(
+      gitIgnore,
+      /^dist-installers\/?$/m,
+      "generated installer artifacts must be ignored",
+    );
+    assert.equal(
+      build.mac.identity,
+      null,
+      "SS-012 macOS packages stay unsigned",
+    );
     assert.equal(build.dmg.sign, false, "SS-012 disk images stay unsigned");
     assert.notEqual(
       build.nsis.artifactName,
@@ -366,5 +448,16 @@ describe("SS-012 cross-platform packaging configuration", () => {
         `${notice} must be visible in packaged resources`,
       );
     }
+  });
+
+  it("has real Windows x64 NSIS and portable packaging outputs", () => {
+    assertExecutableArtifact(
+      windowsNsisArtifactPath,
+      "Windows x64 NSIS installer",
+    );
+    assertExecutableArtifact(
+      windowsPortableArtifactPath,
+      "Windows x64 portable executable",
+    );
   });
 });

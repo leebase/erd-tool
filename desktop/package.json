@@ -17,6 +17,7 @@
   },
   "type": "module",
   "main": "dist-electron/main.cjs",
+  "desktopName": "erd-tool.desktop",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -107,7 +108,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "syncDesktopName": true
     },
     "win": {
       "icon": "build/icon.ico",

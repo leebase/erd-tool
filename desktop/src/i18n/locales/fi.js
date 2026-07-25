@@ -105,7 +105,8 @@ const fi = {
     no_tables: "Ei tauluja",
     no_tables_text: "Aloita kaaviosi rakentaminen!",
     no_relationships: "Ei suhteita",
-    no_relationships_text: "Vedä yhdistääksesi kentät ja muodostaaksesi suhteita!",
+    no_relationships_text:
+      "Vedä yhdistääksesi kentät ja muodostaaksesi suhteita!",
     no_subject_areas: "Ei aihealueita",
     no_subject_areas_text: "Lisää aihealueita ryhmitelläksesi tauluja!",
     no_notes: "Ei muistiinpanoja",
@@ -165,7 +166,8 @@ const fi = {
     create: "Luo",
     confirm: "Vahvista",
     last_modified: "Viimeksi muokattu",
-    drag_and_drop_files: "Vedä ja pudota tiedosto tähän tai klikkaa ladataksesi.",
+    drag_and_drop_files:
+      "Vedä ja pudota tiedosto tähän tai klikkaa ladataksesi.",
     upload_sql_to_generate_diagrams:
       "Lataa SQL-tiedosto automaattisesti luodaksesi taulut ja sarakkeet.",
     overwrite_existing_diagram: "Korvaa olemassa oleva kaavio",

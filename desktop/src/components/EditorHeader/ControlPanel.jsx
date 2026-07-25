@@ -99,6 +99,8 @@ import {
   requestDesktopProjectSave,
   requestDesktopProjectSaveAs,
 } from "../../erdTool/desktopBridge";
+import { diagramToCanonicalProject } from "../../erdTool/projectAdapter";
+import { canonicalProjectToTerraformHcl } from "../../erdTool/terraform";
 
 export default function ControlPanel({
   title,
@@ -115,6 +117,7 @@ export default function ControlPanel({
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
   const [showEditName, setShowEditName] = useState(false);
   const [importDb, setImportDb] = useState("");
+  const [importSourceFormat, setImportSourceFormat] = useState("sql");
   const [exportData, setExportData] = useState({
     data: null,
     filename: `${title}_${new Date().toISOString()}`,
@@ -256,7 +259,10 @@ export default function ControlPanel({
       }
       setRedoStack((prev) => [...prev, a]);
     } else if (a.action === Action.EDIT) {
-      if (a.element === ObjectType.AREA) {
+      if (a.component === "conversational_schema") {
+        setTables(a.undo.tables);
+        setRelationships(a.undo.relationships);
+      } else if (a.element === ObjectType.AREA) {
         updateArea(a.aid, a.undo);
       } else if (a.element === ObjectType.NOTE) {
         updateNote(a.nid, a.undo);
@@ -455,7 +461,10 @@ export default function ControlPanel({
       }
       setUndoStack((prev) => [...prev, a]);
     } else if (a.action === Action.EDIT) {
-      if (a.element === ObjectType.AREA) {
+      if (a.component === "conversational_schema") {
+        setTables(a.redo.tables);
+        setRelationships(a.redo.relationships);
+      } else if (a.element === ObjectType.AREA) {
         updateArea(a.aid, a.redo);
       } else if (a.element === ObjectType.NOTE) {
         updateNote(a.nid, a.redo);
@@ -1131,9 +1140,10 @@ export default function ControlPanel({
           children: [
             {
               function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.MYSQL);
-              },
+              setModal(MODAL.IMPORT_SRC);
+              setImportDb(DB.MYSQL);
+              setImportSourceFormat("sql");
+            },
               name: "MySQL",
               disabled: layout.readOnly,
             },
@@ -1141,6 +1151,7 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.POSTGRES);
+                setImportSourceFormat("sql");
               },
               name: "PostgreSQL",
               disabled: layout.readOnly,
@@ -1149,6 +1160,7 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.SQLITE);
+                setImportSourceFormat("sql");
               },
               name: "SQLite",
               disabled: layout.readOnly,
@@ -1157,6 +1169,7 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.MARIADB);
+                setImportSourceFormat("sql");
               },
               name: "MariaDB",
               disabled: layout.readOnly,
@@ -1165,6 +1178,7 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.MSSQL);
+                setImportSourceFormat("sql");
               },
               name: "MSSQL",
               disabled: layout.readOnly,
@@ -1173,6 +1187,7 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.ORACLESQL);
+                setImportSourceFormat("sql");
               },
               name: "Oracle",
               label: "Beta",
@@ -1182,8 +1197,18 @@ export default function ControlPanel({
               function: () => {
                 setModal(MODAL.IMPORT_SRC);
                 setImportDb(DB.SNOWFLAKE);
+                setImportSourceFormat("sql");
               },
               name: "Snowflake",
+              disabled: layout.readOnly,
+            },
+            {
+              function: () => {
+                setModal(MODAL.IMPORT_SRC);
+                setImportDb(DB.SNOWFLAKE);
+                setImportSourceFormat("terraform");
+              },
+              name: "Snowflake Terraform",
               disabled: layout.readOnly,
             },
           ],
@@ -1192,6 +1217,7 @@ export default function ControlPanel({
           if (database === DB.GENERIC) return;
 
           setModal(MODAL.IMPORT_SRC);
+          setImportSourceFormat("sql");
         },
         disabled: layout.readOnly,
       },
@@ -1438,6 +1464,40 @@ export default function ControlPanel({
               }));
             },
           },
+          ...(database === DB.SNOWFLAKE
+            ? [
+                {
+                  name: "Terraform HCL",
+                  function: () => {
+                    try {
+                      openExportModal(MODAL.CODE);
+                      const project = diagramToCanonicalProject({
+                        database,
+                        title,
+                        tables,
+                        relationships,
+                        references: relationships,
+                        types,
+                        enums,
+                        notes,
+                        areas,
+                        transform,
+                      });
+                      const result = canonicalProjectToTerraformHcl(project);
+                      setExportData((prev) => ({
+                        ...prev,
+                        data: result,
+                        extension: "tf",
+                      }));
+                    } catch (error) {
+                      Toast.error(
+                        error?.message || "Failed to export Terraform HCL",
+                      );
+                    }
+                  },
+                },
+              ]
+            : []),
           {
             name: "PDF",
             function: () => {
@@ -1894,6 +1954,7 @@ export default function ControlPanel({
         setModal={setModal}
         importFrom={importFrom}
         importDb={importDb}
+        importSourceFormat={importSourceFormat}
         saveAsCopy={saveAsCopy}
         onNativeDdlExport={exportNativeSnowflakeDdl}
       />

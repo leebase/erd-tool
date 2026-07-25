@@ -38,6 +38,9 @@ import { useMatch, useParams, useSearchParams } from "react-router-dom";
 import { get, SHARE_FILENAME } from "../api/gists";
 import { mergeCustomTypes } from "../utils/customTypes";
 import { requestDesktopProjectSave } from "../erdTool/desktopBridge";
+import ConversationalSchemaAuthoring, {
+  ConversationalProposalOverlay,
+} from "./ConversationalSchemaAuthoring";
 
 export const IdContext = createContext({
   gistId: "",
@@ -554,6 +557,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           <CanvasContextProvider className="h-full w-full">
             <Canvas saveState={saveState} setSaveState={setSaveState} />
           </CanvasContextProvider>
+          <ConversationalProposalOverlay />
           <Slot name="canvas-overlay" />
           {layout.toolbar && (
             <div
@@ -615,6 +619,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
             </div>
           )}
         </div>
+        <ConversationalSchemaAuthoring />
         <Slot name="right-panel" />
       </div>
       <Modal

@@ -15,6 +15,10 @@ htmlcov/
 __pycache__/
 *.egg-info/
 .agent-orch-scratch/
+.agent-orch/
+code-reviews/
+playbooks/
+artifacts/
 *.pyc
 *.log
 *.dmg

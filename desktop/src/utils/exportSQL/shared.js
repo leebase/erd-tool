@@ -31,11 +31,11 @@ export function escapeQuotes(str) {
 }
 
 export function exportFieldComment(comment) {
-  if (comment === "") {
+  if (comment === undefined || comment === null || comment === "") {
     return "";
   }
 
-  return comment
+  return String(comment)
     .split("\n")
     .map((commentLine) => `\t-- ${commentLine}\n`)
     .join("");

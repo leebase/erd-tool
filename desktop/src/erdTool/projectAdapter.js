@@ -346,6 +346,14 @@ function isRecognizedSnowflakeDefaultFunction(value) {
   return false;
 }
 
+export function isSnowflakeDefaultExpression(value) {
+  const text = String(value).trim();
+  return (
+    SNOWFLAKE_DEFAULT_KEYWORDS.has(text.toUpperCase()) ||
+    isRecognizedSnowflakeDefaultFunction(text)
+  );
+}
+
 function snowflakeDefaultLiteral(value) {
   const text = String(value).trim();
   const upper = text.toUpperCase();
@@ -354,8 +362,7 @@ function snowflakeDefaultLiteral(value) {
     SNOWFLAKE_NUMERIC_LITERAL_RE.test(text) ||
     upper === "TRUE" ||
     upper === "FALSE" ||
-    SNOWFLAKE_DEFAULT_KEYWORDS.has(upper) ||
-    isRecognizedSnowflakeDefaultFunction(text)
+    isSnowflakeDefaultExpression(text)
   ) {
     return text;
   }

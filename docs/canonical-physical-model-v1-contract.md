@@ -1,7 +1,7 @@
 # Canonical Physical Model v1 Contract
 
-Status: focused contract for the
-`canonical_physical_model_v1_snowflake_round_trip` governed slice.
+Status: implemented contract for the canonical physical model v1 Snowflake
+round trip.
 
 This document defines the first durable model contract for `erd-tool`. The
 canonical physical model is the source of truth for provider ingest, project
@@ -328,7 +328,7 @@ Forbidden canonical JSON keys in v1:
 
 ## Acceptance Checks
 
-This contract is satisfied when the governed slice can demonstrate all of the
+This contract is satisfied when the implementation demonstrates all of the
 following:
 
 - `docs/canonical-physical-model-v1-contract.md` exists and defines canonical

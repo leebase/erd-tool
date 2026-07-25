@@ -3,7 +3,8 @@
 This directory contains the Electron/React visual data modeling application for
 ERD Tool. It is derived from [drawDB](https://github.com/drawdb-io/drawdb) and
 adds canonical project files, Snowflake engineering, direct Snowflake metadata
-connections, desktop file operations, and ELK automatic layout.
+connections, desktop file operations, ELK automatic layout, Snowflake Terraform
+round trips, and governed natural-language schema proposals.
 
 ## Development
 

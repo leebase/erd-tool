@@ -8,65 +8,97 @@ export default function ImportSource({
   setImportData,
   error,
   setError,
+  sourceFormat = "sql",
 }) {
   const { t } = useTranslation();
+  const isTerraform = sourceFormat === "terraform";
+  const updateSource = (value) => {
+    setImportData((prev) => ({ ...prev, src: value }));
+    setError({
+      type: STATUS.NONE,
+      message: "",
+    });
+  };
+  const readFile = ({ file, fileList }) => {
+    const f = fileList[0].fileInstance;
+    if (!f) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      setImportData((prev) => ({ ...prev, src: e.target.result }));
+    };
+    reader.readAsText(f);
+
+    return {
+      autoRemove: false,
+      fileInstance: file.fileInstance,
+      status: "success",
+      shouldUpload: false,
+    };
+  };
 
   return (
     <div>
       <Tabs>
-        <TabPane tab={t("insert_sql")} itemKey="text-import">
-          <CodeEditor
-            height={224}
-            language="sql"
-            onChange={(value) => {
-              setImportData((prev) => ({ ...prev, src: value }));
-              setError({
-                type: STATUS.NONE,
-                message: "",
-              });
-            }}
-          />
+        <TabPane
+          tab={isTerraform ? "Insert Terraform HCL" : t("insert_sql")}
+          itemKey="text-import"
+        >
+          {isTerraform ? (
+            <CodeEditor height={224} language="hcl" onChange={updateSource} />
+          ) : (
+            <CodeEditor height={224} language="sql" onChange={updateSource} />
+          )}
         </TabPane>
         <TabPane tab={t("upload_file")} itemKey="file-import">
-          <Upload
-            action="#"
-            beforeUpload={({ file, fileList }) => {
-              const f = fileList[0].fileInstance;
-              if (!f) {
-                return;
+          {isTerraform ? (
+            <Upload
+              action="#"
+              beforeUpload={readFile}
+              draggable={true}
+              dragMainText={t("drag_and_drop_files")}
+              dragSubText="Upload Terraform HCL to generate diagrams"
+              accept=".tf"
+              onRemove={() => {
+                setError({
+                  type: STATUS.NONE,
+                  message: "",
+                });
+                setImportData((prev) => ({ ...prev, src: "" }));
+              }}
+              onFileChange={() =>
+                setError({
+                  type: STATUS.NONE,
+                  message: "",
+                })
               }
-              const reader = new FileReader();
-              reader.onload = async (e) => {
-                setImportData((prev) => ({ ...prev, src: e.target.result }));
-              };
-              reader.readAsText(f);
-
-              return {
-                autoRemove: false,
-                fileInstance: file.fileInstance,
-                status: "success",
-                shouldUpload: false,
-              };
-            }}
-            draggable={true}
-            dragMainText={t("drag_and_drop_files")}
-            dragSubText={t("upload_sql_to_generate_diagrams")}
-            accept=".sql"
-            onRemove={() => {
-              setError({
-                type: STATUS.NONE,
-                message: "",
-              });
-              setImportData((prev) => ({ ...prev, src: "" }));
-            }}
-            onFileChange={() =>
-              setError({
-                type: STATUS.NONE,
-                message: "",
-              })
-            }
-            limit={1}
-          />
+              limit={1}
+            />
+          ) : (
+            <Upload
+              action="#"
+              beforeUpload={readFile}
+              draggable={true}
+              dragMainText={t("drag_and_drop_files")}
+              dragSubText={t("upload_sql_to_generate_diagrams")}
+              accept=".sql"
+              onRemove={() => {
+                setError({
+                  type: STATUS.NONE,
+                  message: "",
+                });
+                setImportData((prev) => ({ ...prev, src: "" }));
+              }}
+              onFileChange={() =>
+                setError({
+                  type: STATUS.NONE,
+                  message: "",
+                })
+              }
+              limit={1}
+            />
+          )}
         </TabPane>
       </Tabs>
 

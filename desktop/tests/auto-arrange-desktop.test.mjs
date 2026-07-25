@@ -44,7 +44,7 @@ describe("SS-006 desktop auto-arrange command", () => {
     assert.match(main, /click:\s*sendAutoArrangeToActiveDiagram/);
     assert.match(
       main,
-      /registerDdlExportHandler\(\);\s*registerSnowflakeHandlers\(\);\s*registerApplicationMenu\(\);\s*createWindow\(\);/,
+      /registerDdlExportHandler\(\);\s*registerConnectionProfileHandlers\(\);\s*registerSnowflakeHandlers\(\);\s*registerLlmHandlers\(\);\s*registerApplicationMenu\(\);\s*createWindow\(\);/,
     );
   });
 

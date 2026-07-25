@@ -171,8 +171,7 @@ const pa = {
     upload_sql_to_generate_diagrams:
       "ਆਪਣੇ ਟੇਬਲਾਂ ਅਤੇ ਕਾਲਮਾਂ ਨੂੰ ਆਪਣੇ-ਆਪ ਜਨਰੇਟ ਕਰਨ ਲਈ ਇੱਕ SQL ਫਾਈਲ ਅੱਪਲੋਡ ਕਰੋ।",
     overwrite_existing_diagram: "ਮੌਜੂਦਾ ਡਾਯਾਗ੍ਰਾਮ ਨੂੰ ਓਵਰਰਾਈਟ ਕਰੋ",
-    only_mysql_supported:
-      "*ਇਸ ਸਮੇਂ ਸਿਰਫ MySQL ਸਕ੍ਰਿਪਟਾਂ ਨੂੰ ਲੋਡ ਕਰਨਾ ਸੰਭਵ ਹੈ।",
+    only_mysql_supported: "*ਇਸ ਸਮੇਂ ਸਿਰਫ MySQL ਸਕ੍ਰਿਪਟਾਂ ਨੂੰ ਲੋਡ ਕਰਨਾ ਸੰਭਵ ਹੈ।",
     blank: "ਖਾਲੀ",
     filename: "ਫਾਈਲ ਨਾਮ",
     table_w_no_name: "ਬਿਨਾਂ ਨਾਮ ਵਾਲੀ ਟੇਬਲ ਘੋਸ਼ਿਤ ਕੀਤੀ ਗਈ",
@@ -194,8 +193,7 @@ const pa = {
     no_primary_key: "ਟੇਬਲ '{{tableName}}' ਵਿੱਚ ਕੋਈ ਮੁੱਖ ਕੁੰਜੀ ਨਹੀਂ ਹੈ",
     type_with_no_name: "ਬਿਨਾਂ ਨਾਮ ਵਾਲੀ ਕਿਸਮ ਘੋਸ਼ਿਤ ਕੀਤੀ ਗਈ",
     duplicate_types: "ਨਾਮ '{{typeName}}' ਵਾਲੀਆਂ ਨਕਲ ਕਿਸਮਾਂ",
-    type_w_no_fields:
-      "ਬਿਨਾਂ ਖੇਤਰਾਂ ਵਾਲੀ ਕਿਸਮ '{{typeName}}' ਘੋਸ਼ਿਤ ਕੀਤੀ ਗਈ",
+    type_w_no_fields: "ਬਿਨਾਂ ਖੇਤਰਾਂ ਵਾਲੀ ਕਿਸਮ '{{typeName}}' ਘੋਸ਼ਿਤ ਕੀਤੀ ਗਈ",
     empty_type_field_name: "ਕਿਸਮ '{{typeName}}' ਵਿੱਚ ਖਾਲੀ ਖੇਤਰ `ਨਾਮ`",
     empty_type_field_type: "ਕਿਸਮ '{{typeName}}' ਵਿੱਚ ਖਾਲੀ ਖੇਤਰ `ਕਿਸਮ`",
     no_values_for_type_field:
@@ -246,7 +244,8 @@ const pa = {
     no_enums: "ਕੋਈ ਇਨੱਮ ਨਹੀਂ",
     no_enums_text: "ਇੱਥੇ ਇਨੱਮ ਪਰਿਭਾਸ਼ਿਤ ਕਰੋ",
     declare_array: "ਐਰੇ ਘੋਸ਼ਿਤ ਕਰੋ",
-    empty_index_name: "ਟੇਬਲ '{{tableName}}' ਵਿੱਚ ਬਿਨਾਂ ਨਾਮ ਵਾਲਾ ਇੰਡੈਕਸ ਘੋਸ਼ਿਤ ਕੀਤਾ",
+    empty_index_name:
+      "ਟੇਬਲ '{{tableName}}' ਵਿੱਚ ਬਿਨਾਂ ਨਾਮ ਵਾਲਾ ਇੰਡੈਕਸ ਘੋਸ਼ਿਤ ਕੀਤਾ",
     didnt_find_diagram: "ਓਹੋ! ਡਾਯਾਗ੍ਰਾਮ ਨਹੀਂ ਮਿਲਿਆ।",
     unsigned: "ਅਨਸਾਈਨਡ",
     share: "ਸਾਂਝਾ ਕਰੋ",

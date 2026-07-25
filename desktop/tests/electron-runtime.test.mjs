@@ -693,7 +693,18 @@ describe("SS-004 native project file bridge contract", () => {
     assert.match(main, /\bipcMain\b/);
     assert.match(main, /node:fs/);
     assert.deepEqual([...runtime.ipcHandlers.keys()].sort(), [
+      "connections:create",
+      "connections:delete",
+      "connections:duplicate",
+      "connections:forward-engineer",
+      "connections:list",
+      "connections:test",
+      "connections:update",
       "ddl:export",
+      "llm:clear-api-key",
+      "llm:propose-schema",
+      "llm:set-api-key",
+      "llm:status",
       "project:open",
       "project:save",
       "project:save-as",
@@ -714,16 +725,29 @@ describe("SS-004 native project file bridge contract", () => {
     assert.ok(desktopApi, "preload must expose window.drawdbDesktop");
     assert.equal(Object.isFrozen(desktopApi), true);
     assert.deepEqual(Object.keys(desktopApi).sort(), [
+      "connections",
       "ddlExport",
+      "llm",
       "projectFiles",
       "runtimeVersion",
       "snowflake",
     ]);
-    assert.equal(desktopApi.runtimeVersion, 2);
+    assert.equal(desktopApi.runtimeVersion, 4);
     assert.equal(Object.isFrozen(desktopApi.projectFiles), true);
     assert.equal(Object.isFrozen(desktopApi.ddlExport), true);
+    assert.equal(Object.isFrozen(desktopApi.connections), true);
     assert.equal(Object.isFrozen(desktopApi.snowflake), true);
+    assert.equal(Object.isFrozen(desktopApi.llm), true);
     assert.deepEqual(Object.keys(desktopApi.ddlExport), ["save"]);
+    assert.deepEqual(Object.keys(desktopApi.connections).sort(), [
+      "create",
+      "delete",
+      "duplicate",
+      "forwardEngineer",
+      "list",
+      "test",
+      "update",
+    ]);
     assert.deepEqual(Object.keys(desktopApi.projectFiles).sort(), [
       "open",
       "save",
@@ -737,6 +761,12 @@ describe("SS-004 native project file bridge contract", () => {
       "listSchemas",
       "listTables",
       "reverseEngineer",
+    ]);
+    assert.deepEqual(Object.keys(desktopApi.llm).sort(), [
+      "clearApiKey",
+      "proposeSchema",
+      "setApiKey",
+      "status",
     ]);
     assert.equal("invoke" in desktopApi, false);
     assert.equal("ipcRenderer" in desktopApi, false);
@@ -755,6 +785,23 @@ describe("SS-004 native project file bridge contract", () => {
       suggestedName: "model.sql",
     };
     await desktopApi.ddlExport.save(ddlRequest);
+    const connectionProfile = {
+      provider: "sqlite",
+      name: "Local SQLite",
+      settings: { databasePath: "/tmp/local.sqlite" },
+      secrets: {},
+    };
+    await desktopApi.connections.list();
+    await desktopApi.connections.create(connectionProfile);
+    await desktopApi.connections.update("profile-1", connectionProfile);
+    await desktopApi.connections.duplicate("profile-1");
+    await desktopApi.connections.test("profile-1");
+    await desktopApi.connections.forwardEngineer({
+      profileId: "profile-1",
+      database: "sqlite",
+      contents: "CREATE TABLE A (ID INTEGER);\n",
+    });
+    await desktopApi.connections.delete("profile-1");
     const connectRequest = {
       mode: "profile",
       profileName: "erd-tool",
@@ -775,11 +822,40 @@ describe("SS-004 native project file bridge contract", () => {
       tables: ["ARTIST"],
     });
     await desktopApi.snowflake.disconnect("session-1");
+    await desktopApi.llm.status();
+    await desktopApi.llm.setApiKey("unit-test-key");
+    await desktopApi.llm.proposeSchema({
+      prompt: "Create a customer table",
+      database: "snowflake",
+      currentModel: {
+        summary: "Current diagram",
+        tables: [],
+        relationships: [],
+      },
+    });
+    await desktopApi.llm.clearApiKey();
     assert.deepEqual(invocations, [
       { channel: "project:open", payload: undefined },
       { channel: "project:save", payload: saveRequest },
       { channel: "project:save-as", payload: saveRequest },
       { channel: "ddl:export", payload: ddlRequest },
+      { channel: "connections:list", payload: undefined },
+      { channel: "connections:create", payload: connectionProfile },
+      {
+        channel: "connections:update",
+        payload: { profileId: "profile-1", profile: connectionProfile },
+      },
+      { channel: "connections:duplicate", payload: { profileId: "profile-1" } },
+      { channel: "connections:test", payload: { profileId: "profile-1" } },
+      {
+        channel: "connections:forward-engineer",
+        payload: {
+          profileId: "profile-1",
+          database: "sqlite",
+          contents: "CREATE TABLE A (ID INTEGER);\n",
+        },
+      },
+      { channel: "connections:delete", payload: { profileId: "profile-1" } },
       { channel: "snowflake:profiles", payload: undefined },
       { channel: "snowflake:connect", payload: connectRequest },
       {
@@ -810,6 +886,57 @@ describe("SS-004 native project file bridge contract", () => {
       {
         channel: "snowflake:disconnect",
         payload: { sessionId: "session-1" },
+      },
+      { channel: "llm:status", payload: undefined },
+      {
+        channel: "llm:set-api-key",
+        payload: { apiKey: "unit-test-key" },
+      },
+      {
+        channel: "llm:propose-schema",
+        payload: {
+          prompt: "Create a customer table",
+          database: "snowflake",
+          currentModel: {
+            summary: "Current diagram",
+            tables: [],
+            relationships: [],
+          },
+        },
+      },
+      { channel: "llm:clear-api-key", payload: undefined },
+    ]);
+  });
+
+  it("registers a native Connections menu with renderer-owned actions", async () => {
+    const runtime = await startProductionMainWithElectronHarness();
+    const template = runtime.menuTemplates.at(-1);
+    const connectionsMenu = template.find((item) => item.label === "Connections");
+
+    assert.ok(connectionsMenu, "Connections menu must be present");
+    assert.deepEqual(
+      connectionsMenu.submenu
+        .filter((item) => item.label)
+        .map((item) => item.label),
+      [
+        "Manage Connections",
+        "Reverse Engineer From Connection",
+        "Forward Engineer To Connection",
+      ],
+    );
+
+    for (const item of connectionsMenu.submenu.filter((entry) => entry.click)) {
+      item.click();
+    }
+    assert.deepEqual(runtime.sentMessages.slice(-3), [
+      { channel: "connections:manage-request", payload: undefined },
+      {
+        channel: "connections:reverse-engineer-request",
+        payload: undefined,
+      },
+      {
+        channel: "connections:forward-engineer-request",
+        payload: undefined,
       },
     ]);
   });

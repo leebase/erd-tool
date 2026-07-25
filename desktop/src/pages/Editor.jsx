@@ -11,6 +11,7 @@ import SaveStateContextProvider from "../context/SaveStateContext";
 import EnumsContextProvider from "../context/EnumsContext";
 import WorkSpace from "../components/Workspace";
 import { useThemedPage } from "../hooks";
+import ConversationalAuthoringContextProvider from "../context/ConversationalAuthoringContext";
 
 export default function Editor() {
   useThemedPage();
@@ -27,7 +28,9 @@ export default function Editor() {
                     <EnumsContextProvider>
                       <TablesContextProvider>
                         <SaveStateContextProvider>
-                          <WorkSpace />
+                          <ConversationalAuthoringContextProvider>
+                            <WorkSpace />
+                          </ConversationalAuthoringContextProvider>
                         </SaveStateContextProvider>
                       </TablesContextProvider>
                     </EnumsContextProvider>

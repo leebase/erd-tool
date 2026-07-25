@@ -1,10 +1,55 @@
+/* global __filename */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 
-import snowflake from "snowflake-sdk";
-import { parse as parseToml } from "smol-toml";
+const require = createRequire(
+  typeof __filename === "string" ? __filename : import.meta.url,
+);
+const parseToml = (() => {
+  try {
+    return require("smol-toml").parse;
+  } catch {
+    return (source) => {
+      const root = {};
+      let current = root;
+      for (const rawLine of String(source).split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) continue;
+        const section = line.match(/^\[connections\.([^\]]+)\]$/);
+        if (section) {
+          root.connections ??= {};
+          current = (root.connections[section[1]] ??= {});
+          continue;
+        }
+        const assignment = line.match(/^([A-Za-z0-9_]+)\s*=\s*(.*)$/);
+        if (!assignment) continue;
+        const value = assignment[2].trim();
+        current[assignment[1]] =
+          value.startsWith('"') && value.endsWith('"')
+            ? JSON.parse(value)
+            : value;
+      }
+      return root;
+    };
+  }
+})();
+const snowflake = (() => {
+  try {
+    return require("snowflake-sdk");
+  } catch {
+    return {
+      createConnection() {
+        fail(
+          "SNOWFLAKE_DRIVER_UNAVAILABLE",
+          "The Snowflake driver is not installed in this workspace.",
+        );
+      },
+    };
+  }
+})();
 
 const MAXIMUM_SELECTION_SIZE = 500;
 const QUERY_TIMEOUT_MS = 90_000;
@@ -204,6 +249,8 @@ function manualConnectionOptions(payload, openExternalBrowser) {
       "password",
       "warehouse",
       "role",
+      "database",
+      "schema",
       "privateKeyPath",
       "privateKeyPass",
     ]),
@@ -229,6 +276,8 @@ function manualConnectionOptions(payload, openExternalBrowser) {
     authenticator,
     warehouse: optionalText(payload.warehouse, "warehouse"),
     role: optionalText(payload.role, "role"),
+    database: optionalText(payload.database, "database"),
+    schema: optionalText(payload.schema, "schema"),
   };
   if (authenticator === "SNOWFLAKE" || authenticator === "USERNAME_PASSWORD_MFA") {
     options.password = requiredText(payload.password, "password", 4096);
@@ -245,6 +294,25 @@ function manualConnectionOptions(payload, openExternalBrowser) {
   } else {
     options.openExternalBrowserCallback = openExternalBrowser;
   }
+  return options;
+}
+
+function savedProfileConnectionOptions(
+  payload,
+  savedProfileResolver,
+  openExternalBrowser,
+) {
+  exactKeys(payload, new Set(["mode", "profileId"]), "saved profile connection");
+  if (typeof savedProfileResolver !== "function") {
+    fail(
+      "SNOWFLAKE_PROFILE_NOT_FOUND",
+      "Saved Snowflake connection profiles are unavailable.",
+    );
+  }
+  const options = manualConnectionOptions(
+    savedProfileResolver(requiredText(payload.profileId, "profile id")),
+    openExternalBrowser,
+  );
   return options;
 }
 
@@ -265,6 +333,7 @@ export function createSnowflakeService({
   configPaths,
   createId = randomUUID,
   openExternalBrowser = () => {},
+  savedProfileResolver,
 } = {}) {
   if (typeof driver.configure === "function") {
     driver.configure({ logLevel: "OFF", additionalLogToConsole: false });
@@ -370,6 +439,13 @@ export function createSnowflakeService({
       }
     } else if (mode === "manual") {
       options = manualConnectionOptions(payload, openExternalBrowser);
+    } else if (mode === "savedProfile") {
+      profileName = requiredText(payload.profileId, "profile id");
+      options = savedProfileConnectionOptions(
+        payload,
+        savedProfileResolver,
+        openExternalBrowser,
+      );
     } else {
       fail(
         "SNOWFLAKE_INVALID_REQUEST",

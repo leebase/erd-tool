@@ -19,6 +19,7 @@ import {
 } from "../../../hooks";
 import { isRtl } from "../../../i18n/utils/rtl";
 import { importSQL } from "../../../utils/importSQL";
+import { terraformHclToDiagram } from "../../../erdTool/terraform";
 import {
   getModalTitle,
   getModalWidth,
@@ -39,6 +40,7 @@ import { openRoute } from "../../../utils/openRoute";
 const extensionToLanguage = {
   md: "markdown",
   sql: "sql",
+  tf: "hcl",
   dbml: "dbml",
   json: "json",
 };
@@ -51,12 +53,13 @@ export default function Modal({
   exportData,
   setExportData,
   importDb,
+  importSourceFormat = "sql",
   importFrom,
   saveAsCopy,
   onNativeDdlExport,
 }) {
   const { t, i18n } = useTranslation();
-  const { setTables, setRelationships, database } = useDiagram();
+  const { setTables, setRelationships, database, setDatabase } = useDiagram();
   const { setNotes } = useNotes();
   const { setAreas } = useAreas();
   const { setTypes } = useTypes();
@@ -111,7 +114,10 @@ export default function Modal({
 
     let ast = null;
     try {
-      if (targetDatabase === DB.SNOWFLAKE) {
+      if (
+        targetDatabase === DB.SNOWFLAKE ||
+        importSourceFormat === "terraform"
+      ) {
         ast = importSource.src;
       } else if (targetDatabase === DB.ORACLESQL) {
         const oracleParser = new OracleParser();
@@ -134,17 +140,21 @@ export default function Modal({
     }
 
     try {
-      const diagramData = importSQL(
-        ast,
-        database === DB.GENERIC ? importDb : database,
-        database,
-      );
+      const diagramData =
+        importSourceFormat === "terraform"
+          ? terraformHclToDiagram(ast, { title })
+          : importSQL(
+              ast,
+              database === DB.GENERIC ? importDb : database,
+              database,
+            );
+      const nextDatabase = diagramData.database || targetDatabase;
 
       if (importSource.overwrite) {
         setTables(diagramData.tables);
         setRelationships(diagramData.relationships);
-        if (databases[database].hasTypes) setTypes(diagramData.types ?? []);
-        if (databases[database].hasEnums) setEnums(diagramData.enums ?? []);
+        if (databases[nextDatabase].hasTypes) setTypes(diagramData.types ?? []);
+        if (databases[nextDatabase].hasEnums) setEnums(diagramData.enums ?? []);
         setTransform((prev) => ({ ...prev, pan: { x: 0, y: 0 } }));
         setNotes([]);
         setAreas([]);
@@ -156,10 +166,13 @@ export default function Modal({
             id: i,
           })),
         );
-        if (databases[database].hasTypes && diagramData.types.length)
+        if (databases[nextDatabase].hasTypes && diagramData.types.length)
           setTypes((prev) => [...prev, ...diagramData.types]);
-        if (databases[database].hasEnums && diagramData.enums.length)
+        if (databases[nextDatabase].hasEnums && diagramData.enums.length)
           setEnums((prev) => [...prev, ...diagramData.enums]);
+      }
+      if (nextDatabase && nextDatabase !== database) {
+        setDatabase(nextDatabase);
       }
 
       setUndoStack([]);
@@ -170,7 +183,7 @@ export default function Modal({
       setError({
         type: STATUS.ERROR,
         message:
-          targetDatabase === DB.SNOWFLAKE
+          targetDatabase === DB.SNOWFLAKE || importSourceFormat === "terraform"
             ? e.message
             : `Please check for syntax errors or let us know about the error.`,
       });
@@ -258,6 +271,7 @@ export default function Modal({
             setImportData={setImportSource}
             error={error}
             setError={setError}
+            sourceFormat={importSourceFormat}
           />
         );
       case MODAL.NEW:

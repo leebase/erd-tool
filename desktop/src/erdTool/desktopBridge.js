@@ -10,6 +10,11 @@ const NATIVE_PROJECT_SAVE_AS_REQUEST = "drawdb:native-project-save-as-request";
 const NATIVE_PROJECT_OPEN_REQUEST = "drawdb:native-project-open-request";
 const DESKTOP_AUTO_ARRANGE_REQUEST =
   "drawdb:desktop-auto-arrange-request";
+const CONNECTIONS_MANAGE_REQUEST = "drawdb:connections-manage-request";
+const CONNECTIONS_REVERSE_ENGINEER_REQUEST =
+  "drawdb:connections-reverse-engineer-request";
+const CONNECTIONS_FORWARD_ENGINEER_REQUEST =
+  "drawdb:connections-forward-engineer-request";
 
 function projectFilesApi() {
   return globalThis.window?.drawdbDesktop?.projectFiles ?? null;
@@ -21,6 +26,14 @@ function ddlExportApi() {
 
 function snowflakeApi() {
   return globalThis.window?.drawdbDesktop?.snowflake ?? null;
+}
+
+function connectionsApi() {
+  return globalThis.window?.drawdbDesktop?.connections ?? null;
+}
+
+function llmApi() {
+  return globalThis.window?.drawdbDesktop?.llm ?? null;
 }
 
 function saveRequest(diagram) {
@@ -57,6 +70,112 @@ export function hasDesktopSnowflake() {
       api?.listTables &&
       api?.reverseEngineer,
   );
+}
+
+export function hasDesktopConnections() {
+  const api = connectionsApi();
+  return Boolean(
+    api?.list &&
+      api?.create &&
+      api?.update &&
+      api?.duplicate &&
+      api?.delete &&
+      api?.test &&
+      api?.forwardEngineer,
+  );
+}
+
+export function hasDesktopLlm() {
+  const api = llmApi();
+  return Boolean(
+    api?.status &&
+      api?.setApiKey &&
+      api?.clearApiKey &&
+      api?.proposeSchema,
+  );
+}
+
+function requireLlmApi() {
+  const api = llmApi();
+  if (!hasDesktopLlm()) {
+    throw new Error(
+      "Conversational schema authoring is available in the desktop app",
+    );
+  }
+  return api;
+}
+
+export async function getDesktopLlmStatus() {
+  const status = await requireLlmApi().status();
+  if (
+    !status ||
+    typeof status.configured !== "boolean" ||
+    typeof status.model !== "string"
+  ) {
+    throw new Error("Schema provider returned an invalid status");
+  }
+  return status;
+}
+
+export async function setDesktopLlmApiKey(apiKey) {
+  return requireLlmApi().setApiKey(apiKey);
+}
+
+export async function clearDesktopLlmApiKey() {
+  return requireLlmApi().clearApiKey();
+}
+
+export async function proposeDesktopSchema(request) {
+  const result = await requireLlmApi().proposeSchema(request);
+  if (
+    !result ||
+    typeof result !== "object" ||
+    !result.proposal ||
+    typeof result.model !== "string"
+  ) {
+    throw new Error("Schema provider returned an invalid proposal");
+  }
+  return result;
+}
+
+function requireConnectionsApi() {
+  const api = connectionsApi();
+  if (!hasDesktopConnections()) {
+    throw new Error("Saved connections are unavailable outside the desktop app");
+  }
+  return api;
+}
+
+export async function listDesktopConnections() {
+  const profiles = await requireConnectionsApi().list();
+  if (!Array.isArray(profiles)) {
+    throw new Error("Connection profile discovery returned an invalid result");
+  }
+  return profiles;
+}
+
+export async function createDesktopConnection(profile) {
+  return requireConnectionsApi().create(profile);
+}
+
+export async function updateDesktopConnection(profileId, profile) {
+  return requireConnectionsApi().update(profileId, profile);
+}
+
+export async function duplicateDesktopConnection(profileId) {
+  return requireConnectionsApi().duplicate(profileId);
+}
+
+export async function deleteDesktopConnection(profileId) {
+  return requireConnectionsApi().delete(profileId);
+}
+
+export async function testDesktopConnection(profileId) {
+  return requireConnectionsApi().test(profileId);
+}
+
+export async function forwardEngineerDesktopConnection(request) {
+  return requireConnectionsApi().forwardEngineer(request);
 }
 
 function requireSnowflakeApi() {
@@ -172,6 +291,53 @@ export async function exportDesktopSnowflakeDDL(
   return { canceled: false, filePath: result.filePath };
 }
 
+export async function exportDesktopConnectionDDL(
+  diagram,
+  profileId,
+  generatedContents,
+  suggestedBasename,
+) {
+  const api = ddlExportApi();
+  if (typeof api?.save !== "function") {
+    throw new Error("Native DDL export is unavailable");
+  }
+  if (!["snowflake", "sqlite"].includes(diagram?.database)) {
+    throw new Error("Saved connection export supports Snowflake and SQLite diagrams");
+  }
+
+  const contents = generatedContents ?? exportSQL(diagram);
+  if (typeof contents !== "string" || !contents.trim()) {
+    throw new Error("DDL export produced empty SQL");
+  }
+  await forwardEngineerDesktopConnection({
+    profileId,
+    database: diagram.database,
+    contents,
+  });
+
+  const basenameSource = String(
+    suggestedBasename || diagram.title || `${diagram.database}_ddl`,
+  )
+    .trim()
+    .replace(/\.sql$/i, "")
+    .slice(0, 251);
+  const basename = basenameSource.replace(/[^A-Za-z0-9_$-]+/g, "_") || "ddl";
+  const result = await api.save({
+    contents,
+    suggestedName: `${basename}.sql`,
+    provider: diagram.database,
+  });
+  if (result?.canceled === true) return { canceled: true };
+  if (
+    result?.canceled !== false ||
+    typeof result.filePath !== "string" ||
+    !result.filePath
+  ) {
+    throw new Error("Native DDL export returned an invalid result");
+  }
+  return { canceled: false, filePath: result.filePath };
+}
+
 export function requestDesktopProjectSave() {
   globalThis.window?.dispatchEvent(new Event(NATIVE_PROJECT_SAVE_REQUEST));
 }
@@ -220,6 +386,36 @@ export function onDesktopAutoArrangeRequest(handler) {
   return () =>
     globalThis.window?.removeEventListener(
       DESKTOP_AUTO_ARRANGE_REQUEST,
+      handler,
+    );
+}
+
+export function onDesktopConnectionsManageRequest(handler) {
+  globalThis.window?.addEventListener(CONNECTIONS_MANAGE_REQUEST, handler);
+  return () =>
+    globalThis.window?.removeEventListener(CONNECTIONS_MANAGE_REQUEST, handler);
+}
+
+export function onDesktopConnectionsReverseEngineerRequest(handler) {
+  globalThis.window?.addEventListener(
+    CONNECTIONS_REVERSE_ENGINEER_REQUEST,
+    handler,
+  );
+  return () =>
+    globalThis.window?.removeEventListener(
+      CONNECTIONS_REVERSE_ENGINEER_REQUEST,
+      handler,
+    );
+}
+
+export function onDesktopConnectionsForwardEngineerRequest(handler) {
+  globalThis.window?.addEventListener(
+    CONNECTIONS_FORWARD_ENGINEER_REQUEST,
+    handler,
+  );
+  return () =>
+    globalThis.window?.removeEventListener(
+      CONNECTIONS_FORWARD_ENGINEER_REQUEST,
       handler,
     );
 }

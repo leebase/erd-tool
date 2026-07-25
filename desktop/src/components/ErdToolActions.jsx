@@ -14,6 +14,7 @@ import {
   useSaveState,
 } from "../hooks";
 import { DB, ObjectType, Tab, Action, State } from "../data/constants";
+import { exportSQL } from "../utils/exportSQL";
 import {
   canonicalProjectToDiagram,
   diagramToCanonicalProject,
@@ -21,11 +22,17 @@ import {
   toSnowflakeIdentifier,
 } from "../erdTool/projectAdapter";
 import { layoutDiagram } from "../erdTool/elkLayout";
+import ConnectionProfilesManager from "./ConnectionProfilesManager";
 import SnowflakeReverseEngineer from "./SnowflakeReverseEngineer";
 import {
+  exportDesktopConnectionDDL,
   hasDesktopSnowflake,
   hasDesktopProjectFiles,
+  listDesktopConnections,
   onDesktopAutoArrangeRequest,
+  onDesktopConnectionsForwardEngineerRequest,
+  onDesktopConnectionsManageRequest,
+  onDesktopConnectionsReverseEngineerRequest,
   onDesktopProjectOpenRequest,
   onDesktopProjectSaveAsRequest,
   onDesktopProjectSaveRequest,
@@ -89,6 +96,7 @@ export default function ErdToolActions({
   const [openVisible, setOpenVisible] = useState(false);
   const [projectText, setProjectText] = useState("");
   const [snowflakeVisible, setSnowflakeVisible] = useState(false);
+  const [connectionsVisible, setConnectionsVisible] = useState(false);
   const [hasNativeProjectPath, setHasNativeProjectPath] = useState(false);
   const [savedNativeRevision, setSavedNativeRevision] = useState(null);
   const desktopProjectFiles = hasDesktopProjectFiles();
@@ -404,11 +412,82 @@ export default function ErdToolActions({
     });
   };
 
+  const reverseEngineerFromConnection = async () => {
+    if (layout.readOnly) {
+      Toast.error("Editor is read-only");
+      return;
+    }
+    if (database !== DB.SNOWFLAKE) {
+      Toast.error("Reverse engineering is currently available for Snowflake connections.");
+      return;
+    }
+    setSnowflakeVisible(true);
+  };
+
+  const forwardEngineerToConnection = async () => {
+    if (!["snowflake", "sqlite"].includes(database)) {
+      Toast.error("Saved connection export supports Snowflake and SQLite diagrams.");
+      return;
+    }
+    try {
+      const diagram = currentDiagram();
+      const contents = exportSQL(diagram);
+      if (!contents.trim()) {
+        Toast.error("DDL export produced empty SQL");
+        return;
+      }
+      const profiles = (await listDesktopConnections()).filter(
+        (profile) =>
+          profile.provider === database &&
+          profile.capabilities?.forwardEngineering?.exportDdl,
+      );
+      if (!profiles.length) {
+        setConnectionsVisible(true);
+        Toast.error("Add a saved connection before forward engineering.");
+        return;
+      }
+      const selected = profiles[0];
+      const result = await exportDesktopConnectionDDL(
+        diagram,
+        selected.id,
+        contents,
+        title || selected.name,
+      );
+      if (!result?.canceled) {
+        Toast.success(`DDL exported for ${selected.name}`);
+      }
+    } catch (error) {
+      Toast.error(error?.message || "Forward engineering failed");
+    }
+  };
+
   const autoLayoutRef = useRef(null);
   autoLayoutRef.current = runAutoLayout;
   useEffect(() => {
     return onDesktopAutoArrangeRequest(() => {
       void autoLayoutRef.current?.();
+    });
+  }, []);
+
+  useEffect(() => {
+    return onDesktopConnectionsManageRequest(() => {
+      setConnectionsVisible(true);
+    });
+  }, []);
+
+  const reverseFromConnectionRef = useRef(null);
+  reverseFromConnectionRef.current = reverseEngineerFromConnection;
+  useEffect(() => {
+    return onDesktopConnectionsReverseEngineerRequest(() => {
+      void reverseFromConnectionRef.current?.();
+    });
+  }, []);
+
+  const forwardToConnectionRef = useRef(null);
+  forwardToConnectionRef.current = forwardEngineerToConnection;
+  useEffect(() => {
+    return onDesktopConnectionsForwardEngineerRequest(() => {
+      void forwardToConnectionRef.current?.();
     });
   }, []);
 
@@ -534,6 +613,10 @@ export default function ErdToolActions({
         onClose={() => setSnowflakeVisible(false)}
         onImport={importLiveSnowflakeDiagram}
         readOnly={layout.readOnly}
+      />
+      <ConnectionProfilesManager
+        visible={connectionsVisible}
+        onClose={() => setConnectionsVisible(false)}
       />
       <Modal
         title="Open ERD Project"
