@@ -120,12 +120,14 @@ For a release-shaped desktop change, also run:
 
 ```bash
 npm run verify:release
-npm audit --omit=dev
+npm audit --omit=dev --audit-level=high
 ```
 
 If a check cannot run in your environment, say why in the pull request and
 provide the closest deterministic alternative. Live Snowflake or Databricks
-access is opt-in and is never required for the default contributor gate.
+access is opt-in and is never required for the default contributor gate. A
+major React Router upgrade is a tracked compatibility follow-up; do not apply
+`npm audit fix --force` without testing the desktop application.
 
 ## Pull requests
 

@@ -24,6 +24,8 @@ Snowflake and reverse engineered back into the editor.
 > Silicon macOS. Linux and Windows packaging are present but are not release
 > gates yet.
 
+**Try ERD Tool:** <https://nginx.leebasehome.com/erd-tool/>
+
 ## Run the Mac application from source
 
 Prerequisites: Node.js 22 or newer and npm.

@@ -93,5 +93,6 @@
    reverse-engineering proposal.
 2. Keep v0.1.0 unsigned and non-notarized until a concrete public-binary
    distribution milestone justifies an owner-approved signing decision.
-3. Validate Linux and Windows only when those platforms become active targets.
-4. Row-data movement remains optional future work, not a hidden release blocker.
+3. Review the React Router major upgrade before any public binary distribution.
+4. Validate Linux and Windows only when those platforms become active targets.
+5. Row-data movement remains optional future work, not a hidden release blocker.

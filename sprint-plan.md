@@ -6,6 +6,8 @@
 - [x] Open issue #2 for fixture-backed Unity Catalog reverse engineering.
 - [x] Refresh PR #1 with the contributor handoff and explicit unsigned-release
   decision; PR is ready for review.
+- [x] Refresh production dependencies and retain a high/critical audit gate;
+  the remaining React Router major upgrade is explicitly deferred for review.
 - [ ] Merge PR #1 after final owner review.
 - [ ] Revisit Linux and Windows packaging when those platforms become active
   release targets.
