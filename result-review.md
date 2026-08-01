@@ -32,6 +32,62 @@ Results: 119 Python tests and 115 desktop tests pass; lint and all renderer/
 Electron builds pass; the production dependency audit reports zero known
 vulnerabilities; the generated executable is ARM64; and Playwright launched the
 packaged app, observed title `ERD Tool`, and confirmed Snowflake UI availability.
+## 2026-07-24 — Rebuilt conversational schema authoring
+
+### What Was Built
+
+The lost SS-014 feature was rebuilt from scratch in
+`/Users/lee/projects/drawdb`. The desktop app now has a docked natural-language
+schema panel, strict editable proposals for tables, columns, keys, and
+relationships, pending canvas diffs, and explicit Accept, Edit, and Reject
+actions. Accepted proposals update the diagram only after review and participate
+in undo/redo and normal dirty/save state.
+
+The provider path uses the OpenAI Responses API with strict Structured Outputs.
+The OpenAI API key is owned by Electron, encrypted with `safeStorage`, and
+crosses only fixed allowlisted IPC calls. It is not written into project files,
+renderer persistence, logs, test fixtures, or snapshots. Offline, refusal,
+authentication, malformed-output, and stale-proposal paths fail without
+mutating the diagram.
+
+### Why It Matters
+
+Natural-language schema creation is restored as a controlled modeling workflow,
+not a direct model mutation. Users can see and edit the exact proposed logical
+model before accepting it, while the canonical physical model remains the
+authoritative validation boundary.
+
+### How to Verify
+
+```bash
+cd /Users/lee/projects/drawdb
+npm run test
+npm run lint
+npm run build:desktop
+npm run test:browser
+```
+
+The rebuild passed 146/146 automated tests, ESLint, the production desktop
+renderer and Electron builds, the real browser workflow, a packaged Electron UI
+smoke, credential-pattern scanning, and `git diff --check`. The Electron smoke
+confirmed the editor title, visible conversational panel and API-key field, and
+a disabled Generate action before configuration. No live provider request was
+made because no API key was supplied for this verification. The complete
+verified desktop feature set was published to drawDB `main` as `fbe78fa`, on top
+of the previously local Snowflake export commit `09d7860`.
+
+## 2026-08-01 — Contributor readiness and Databricks handoff
+
+The repository now has a contributor guide, a Databricks-specific reverse-
+engineering brief, a Databricks issue form, and a pull-request checklist that
+keeps provider work inside the canonical physical model. Issue #2 scopes the
+first fixture-backed Unity Catalog contribution around deterministic metadata,
+safe offline tests, and explicit unsupported cases.
+
+The macOS release PR was refreshed with these docs and marked ready for review.
+The release decision remains explicit: v0.1.0 is an unsigned, non-notarized
+source release; signing and notarization stay deferred until a concrete public
+binary distribution milestone has an owner-approved plan.
 
 ## 2026-07-11 — Working SQLite-to-Snowflake ERD application
 

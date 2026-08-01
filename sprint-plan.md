@@ -1,5 +1,15 @@
 # Sprint Plan
 
+## Contributor readiness — 2026-08-01
+
+- [x] Add Databricks-specific contributor guidance and an issue form.
+- [x] Open issue #2 for fixture-backed Unity Catalog reverse engineering.
+- [x] Refresh PR #1 with the contributor handoff and explicit unsigned-release
+  decision; PR is ready for review.
+- [ ] Merge PR #1 after final owner review.
+- [ ] Revisit Linux and Windows packaging when those platforms become active
+  release targets.
+
 ## Open-source macOS release — 2026-07-15
 
 - [x] Consolidate the completed Electron application into `desktop/`.
@@ -90,3 +100,17 @@
   findings, then update AgentFlow handoff documents.
 - [x] Commit and push verified changes in both repositories (`erd-tool`
   `d88dc51`; drawDB `7601f6a`, followed by this closeout handoff).
+
+## Recovery sprint — conversational schema authoring
+
+- [x] Rebuild SS-014 from scratch in the drawDB desktop fork after the synced
+  implementation files were lost.
+- [x] Restore strict logical proposals, reviewable canvas diffs, explicit
+  Accept/Edit/Reject, undo/redo, dirty/save integration, and safe error paths.
+- [x] Restore the allowlisted Electron provider bridge and OS-encrypted OpenAI
+  API-key lifecycle without adding credentials to projects or renderer storage.
+- [x] Add deterministic provider/core/UI/runtime tests and pass the full
+  146-test suite, lint, desktop/Electron builds, browser flow, packaged Electron
+  smoke, credential scan, and diff validation.
+- [x] Commit and push the complete verified drawDB desktop feature set to
+  `origin/main` (`fbe78fa`, following `09d7860`).
