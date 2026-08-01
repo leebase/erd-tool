@@ -97,6 +97,10 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), the
 [Code of Conduct](CODE_OF_CONDUCT.md), and the licensing boundary below before
 opening a pull request.
 
+Databricks contributors are especially welcome. Start with the
+[Databricks support contribution guide](docs/contributing/databricks-support.md)
+and open a focused proposal using the Databricks issue form.
+
 ## Licensing
 
 This is a multi-license repository:

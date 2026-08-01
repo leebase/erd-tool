@@ -37,6 +37,12 @@ project files. Use a least-privileged role. The application supports password,
 private-key, and external-browser authentication and can reverse engineer the
 selected Snowflake database/schema into the editable canvas.
 
+## Contributing
+
+See the repository-level [contributor guide](../CONTRIBUTING.md), especially
+the [Databricks support guide](../docs/contributing/databricks-support.md),
+before adding a provider adapter or metadata workflow.
+
 ## Source and attribution
 
 - Upstream: `drawdb-io/drawdb`
