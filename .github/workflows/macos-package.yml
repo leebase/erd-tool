@@ -24,7 +24,7 @@ jobs:
       - run: npm ci
       - run: npm run verify:release
       - run: npm run dist:desktop:mac:arm64
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: erd-tool-macos-arm64-unsigned
           path: |
