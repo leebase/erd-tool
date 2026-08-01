@@ -8,7 +8,7 @@
   decision; PR is ready for review.
 - [x] Refresh production dependencies and retain a high/critical audit gate;
   the remaining React Router major upgrade is explicitly deferred for review.
-- [ ] Merge PR #1 after final owner review.
+- [x] Merge PR #1 after final owner review.
 - [ ] Revisit Linux and Windows packaging when those platforms become active
   release targets.
 
@@ -27,7 +27,7 @@
   from release documentation.
 - [x] Pass 119 Python tests, 115 desktop tests, lint/build gates, production
   audit, ARM64 package creation, and packaged-app smoke launch.
-- [ ] Merge the release pull request after final owner review.
+- [x] Merge the release pull request after final owner review.
 
 ## Current sprint
 

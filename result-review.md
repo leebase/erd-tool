@@ -84,10 +84,12 @@ keeps provider work inside the canonical physical model. Issue #2 scopes the
 first fixture-backed Unity Catalog contribution around deterministic metadata,
 safe offline tests, and explicit unsupported cases.
 
-The macOS release PR was refreshed with these docs and marked ready for review.
-The release decision remains explicit: v0.1.0 is an unsigned, non-notarized
-source release; signing and notarization stay deferred until a concrete public
-binary distribution milestone has an owner-approved plan.
+The macOS release PR (#1) was refreshed with these docs, reconciled with
+`main`, and merged. The release decision remains explicit: v0.1.0 is an
+unsigned, non-notarized source release; signing and notarization stay deferred
+until a concrete public binary distribution milestone has an owner-approved
+plan. Two moderate React Router advisories remain documented for compatibility
+review before public binary distribution.
 
 ## 2026-07-11 — Working SQLite-to-Snowflake ERD application
 

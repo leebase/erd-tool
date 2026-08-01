@@ -3,8 +3,8 @@
 ## Snapshot
 
 - Mode: 2, with explicit autonomous delivery authorization for this milestone.
-- Current state: ERD Tool v0.1.0 source release candidate on branch
-  `agent/open-source-mac-release`.
+- Current state: ERD Tool v0.1.0 source release merged to `main`; the macOS
+  source release is unsigned and non-notarized.
 - The completed Electron application is versioned in this repository under
   `desktop/`; the former sibling-repository runtime dependency is gone.
 - Apple Silicon macOS is the validated release target. Linux and Windows
@@ -43,9 +43,13 @@
 - Made tutorials portable and removed all development-machine paths from
   public getting-started instructions.
 - Validated 119 Python tests; 115 desktop tests; lint; web, desktop, and
-  Electron builds; zero production dependency vulnerabilities; ARM64 DMG/ZIP
+  Electron builds; the high/critical production dependency audit; ARM64 DMG/ZIP
   packaging; and a packaged-app Playwright launch showing the ERD Tool editor
   with Snowflake available.
+- Added Databricks-specific contributor guidance, a proposal issue form, a
+  fixture-backed Unity Catalog issue (#2), and provider-aware PR expectations.
+- Merged the macOS release PR (#1) after reconciling it with `main`; the
+  release decision remains unsigned and non-notarized.
 - Rebuilt the lost SS-014 conversational schema-authoring feature in the
   `/Users/lee/projects/drawdb` desktop fork. The rebuild includes strict logical
   model proposals, OpenAI Responses API Structured Outputs, encrypted local API
@@ -91,8 +95,8 @@
 
 1. Invite a Databricks contributor to issue #2 and review the first fixture-backed
    reverse-engineering proposal.
-2. Keep v0.1.0 unsigned and non-notarized until a concrete public-binary
+2. Review the React Router major upgrade before any public binary distribution.
+3. Keep v0.1.0 unsigned and non-notarized until a concrete public-binary
    distribution milestone justifies an owner-approved signing decision.
-3. Review the React Router major upgrade before any public binary distribution.
 4. Validate Linux and Windows only when those platforms become active targets.
 5. Row-data movement remains optional future work, not a hidden release blocker.
