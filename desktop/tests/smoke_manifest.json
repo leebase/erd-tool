@@ -1,0 +1,15 @@
+{
+  "scope": "existing-drawdb-web-baseline",
+  "description": "Smoke-runner contract for the existing drawDB web baseline only; it does not prove that the future Electron shell is implemented.",
+  "start_command": [
+    "python3",
+    "scripts/start_web_smoke.py"
+  ],
+  "check_command": [
+    "python3",
+    "scripts/check_web_smoke.py"
+  ],
+  "startup_delay_seconds": 2,
+  "startup_timeout_seconds": 30,
+  "check_timeout_seconds": 150
+}

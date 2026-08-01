@@ -1,5 +1,37 @@
 # Result Review
 
+## 2026-07-15 — Open-source macOS release candidate
+
+### What Was Built
+
+The finished Electron/Snowflake application was consolidated into this
+repository under `desktop/`, branded as ERD Tool 0.1.0, and prepared as a
+reproducible Apple Silicon source release. Public-readiness work includes CI,
+an unsigned macOS package workflow, community and security policies, portable
+tutorials, changelog/release notes, source links in the application, and
+complete dependency/upstream notices.
+
+The licensing audit established a required multi-license structure: the
+original canonical Python tooling is MIT licensed, while the drawDB-derived
+desktop application remains AGPL-3.0-only. The boundary is explicit in the
+README and `LICENSE_SCOPE.md`; the application is not incorrectly advertised as
+MIT.
+
+### How It Was Verified
+
+```bash
+$HOME/.venvs/erd-tool/bin/python -m pytest
+cd desktop
+npm ci
+npm run verify:release
+npm audit --omit=dev
+npm run dist:desktop:mac:arm64
+```
+
+Results: 119 Python tests and 115 desktop tests pass; lint and all renderer/
+Electron builds pass; the production dependency audit reports zero known
+vulnerabilities; the generated executable is ARM64; and Playwright launched the
+packaged app, observed title `ERD Tool`, and confirmed Snowflake UI availability.
 ## 2026-07-24 — Rebuilt conversational schema authoring
 
 ### What Was Built
@@ -43,6 +75,19 @@ a disabled Generate action before configuration. No live provider request was
 made because no API key was supplied for this verification. The complete
 verified desktop feature set was published to drawDB `main` as `fbe78fa`, on top
 of the previously local Snowflake export commit `09d7860`.
+
+## 2026-08-01 — Contributor readiness and Databricks handoff
+
+The repository now has a contributor guide, a Databricks-specific reverse-
+engineering brief, a Databricks issue form, and a pull-request checklist that
+keeps provider work inside the canonical physical model. Issue #2 scopes the
+first fixture-backed Unity Catalog contribution around deterministic metadata,
+safe offline tests, and explicit unsupported cases.
+
+The macOS release PR was refreshed with these docs and marked ready for review.
+The release decision remains explicit: v0.1.0 is an unsigned, non-notarized
+source release; signing and notarization stay deferred until a concrete public
+binary distribution milestone has an owner-approved plan.
 
 ## 2026-07-11 — Working SQLite-to-Snowflake ERD application
 

@@ -1,0 +1,33 @@
+name: Package macOS (unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run verify:release
+      - run: npm run dist:desktop:mac:arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: erd-tool-macos-arm64-unsigned
+          path: |
+            desktop/dist-installers/*.dmg
+            desktop/dist-installers/*.zip
+          if-no-files-found: error

@@ -1,0 +1,61 @@
+name: Databricks support proposal
+description: Propose or implement a focused Databricks or Unity Catalog slice
+title: "[Databricks]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with docs/contributing/databricks-support.md. Do not include
+        workspace URLs, tokens, PATs, client secrets, customer data, or real
+        credentials. Use sanitized or synthetic metadata fixtures.
+  - type: dropdown
+    id: contribution_type
+    attributes:
+      label: Contribution type
+      options:
+        - Reverse-engineering metadata adapter
+        - Canonical type mapping and fixtures
+        - Constraint or relationship metadata
+        - Forward DDL
+        - Connection/authentication workflow
+        - Documentation or tests
+    validations:
+      required: true
+  - type: textarea
+    id: provider_surface
+    attributes:
+      label: Databricks surface
+      description: State cloud, Unity Catalog or hive_metastore, runtime/warehouse version, relation kinds, and privileges involved.
+    validations:
+      required: true
+  - type: textarea
+    id: user_problem
+    attributes:
+      label: User problem
+      description: Who needs this and what should ERD Tool let them do?
+    validations:
+      required: true
+  - type: textarea
+    id: fixture_plan
+    attributes:
+      label: Fixture and test plan
+      description: Describe the sanitized or synthetic metadata fixture and the deterministic checks it will enable.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope and exclusions
+      description: List supported objects, types, keys, comments, defaults, and explicit unsupported cases.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I will not include credentials, tokens, workspace paths, customer data, or provider/session state in the issue or proposed fixture.
+          required: true
+        - label: I will preserve the canonical physical model as the source of truth and document any unsupported or lossy mapping.
+          required: true

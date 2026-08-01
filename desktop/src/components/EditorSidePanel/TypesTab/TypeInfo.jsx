@@ -1,0 +1,189 @@
+import { useState } from "react";
+import { Action, ObjectType } from "../../../data/constants";
+import {
+  Collapse,
+  Row,
+  Col,
+  Input,
+  TextArea,
+  Button,
+  Card,
+} from "@douyinfe/semi-ui";
+import { IconDeleteStroked, IconPlus } from "@douyinfe/semi-icons";
+import { useUndoRedo, useTypes, useDiagram, useLayout } from "../../../hooks";
+import TypeField from "./TypeField";
+import { useTranslation } from "react-i18next";
+import { nanoid } from "nanoid";
+
+export default function TypeInfo({ index, data }) {
+  const { layout } = useLayout();
+  const { deleteType, updateType } = useTypes();
+  const { tables, updateField } = useDiagram();
+  const { setUndoStack, setRedoStack } = useUndoRedo();
+  const [editField, setEditField] = useState({});
+  const { t } = useTranslation();
+
+  // TODO: remove indexes, not a valid case after adding id to types
+  const typeId = data.id ?? index;
+
+  return (
+    <div id={`scroll_type_${typeId}`}>
+      <Collapse.Panel
+        header={
+          <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+            {data.name}
+          </div>
+        }
+        itemKey={`${index}`}
+      >
+        <div className="flex items-center mb-2.5">
+          <div className="text-md font-semibold break-keep">{t("name")}: </div>
+          <Input
+            value={data.name}
+            readonly={layout.readOnly}
+            validateStatus={data.name === "" ? "error" : "default"}
+            placeholder={t("name")}
+            className="ms-2"
+            onChange={(value) => {
+              updateType(typeId, { name: value });
+              tables.forEach((table) => {
+                table.fields.forEach((field) => {
+                  if (field.type.toLowerCase() === data.name.toLowerCase()) {
+                    updateField(table.id, field.id, {
+                      type: value.toUpperCase(),
+                    });
+                  }
+                });
+              });
+            }}
+            onFocus={(e) => setEditField({ name: e.target.value })}
+            onBlur={(e) => {
+              if (e.target.value === editField.name) return;
+
+              const updatedFields = tables.reduce((acc, table) => {
+                table.fields.forEach((field, i) => {
+                  if (field.type.toLowerCase() === data.name.toLowerCase()) {
+                    acc.push({ tid: table.id, fid: i });
+                  }
+                });
+                return acc;
+              }, []);
+
+              setUndoStack((prev) => [
+                ...prev,
+                {
+                  action: Action.EDIT,
+                  element: ObjectType.TYPE,
+                  component: "self",
+                  tid: typeId,
+                  undo: editField,
+                  redo: { name: e.target.value },
+                  updatedFields,
+                  message: t("edit_type", {
+                    typeName: data.name,
+                    extra: "[name]",
+                  }),
+                },
+              ]);
+              setRedoStack([]);
+            }}
+          />
+        </div>
+        {data.fields.map((f, j) => (
+          <TypeField key={j} data={f} fid={j} tid={index} />
+        ))}
+        <Card
+          bodyStyle={{ padding: "4px" }}
+          style={{ marginTop: "12px", marginBottom: "12px" }}
+          headerLine={false}
+        >
+          <Collapse lazyRender keepDOM={false}>
+            <Collapse.Panel header={t("comment")} itemKey="1">
+              <TextArea
+                field="comment"
+                value={data.comment}
+                autosize
+                readonly={layout.readOnly}
+                placeholder={t("comment")}
+                rows={1}
+                onChange={(value) =>
+                  updateType(typeId, { comment: value }, false)
+                }
+                onFocus={(e) => setEditField({ comment: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value === editField.comment) return;
+                  setUndoStack((prev) => [
+                    ...prev,
+                    {
+                      action: Action.EDIT,
+                      element: ObjectType.TYPE,
+                      component: "self",
+                      tid: typeId,
+                      undo: editField,
+                      redo: { comment: e.target.value },
+                      message: t("edit_type", {
+                        typeName: data.name,
+                        extra: "[comment]",
+                      }),
+                    },
+                  ]);
+                  setRedoStack([]);
+                }}
+              />
+            </Collapse.Panel>
+          </Collapse>
+        </Card>
+        <Row gutter={6} className="mt-2">
+          <Col span={12}>
+            <Button
+              icon={<IconPlus />}
+              disabled={layout.readOnly}
+              onClick={() => {
+                const newField = {
+                  name: "",
+                  type: "",
+                  id: nanoid(),
+                };
+                setUndoStack((prev) => [
+                  ...prev,
+                  {
+                    action: Action.EDIT,
+                    element: ObjectType.TYPE,
+                    component: "field_add",
+                    data: {
+                      field: newField,
+                      index: data.fields.length,
+                    },
+                    tid: typeId,
+                    message: t("edit_type", {
+                      typeName: data.name,
+                      extra: "[add field]",
+                    }),
+                  },
+                ]);
+                setRedoStack([]);
+                updateType(typeId, {
+                  fields: [...data.fields, newField],
+                });
+              }}
+              block
+            >
+              {t("add_field")}
+            </Button>
+          </Col>
+          <Col span={12}>
+            <Button
+              block
+              type="danger"
+              disabled={layout.readOnly}
+              icon={<IconDeleteStroked />}
+              onClick={() => deleteType(typeId)}
+            >
+              {t("delete")}
+            </Button>
+          </Col>
+        </Row>
+      </Collapse.Panel>
+    </div>
+  );
+}

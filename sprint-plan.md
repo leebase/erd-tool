@@ -1,5 +1,34 @@
 # Sprint Plan
 
+## Contributor readiness — 2026-08-01
+
+- [x] Add Databricks-specific contributor guidance and an issue form.
+- [x] Open issue #2 for fixture-backed Unity Catalog reverse engineering.
+- [x] Refresh PR #1 with the contributor handoff and explicit unsigned-release
+  decision; PR is ready for review.
+- [x] Refresh production dependencies and retain a high/critical audit gate;
+  the remaining React Router major upgrade is explicitly deferred for review.
+- [ ] Merge PR #1 after final owner review.
+- [ ] Revisit Linux and Windows packaging when those platforms become active
+  release targets.
+
+## Open-source macOS release — 2026-07-15
+
+- [x] Consolidate the completed Electron application into `desktop/`.
+- [x] Preserve drawDB AGPL attribution, full license, patch history, and elkjs
+  third-party notice.
+- [x] Add a root MIT license for original canonical Python tooling and document
+  the exact multi-license boundary.
+- [x] Add public README, changelog, security policy, contribution guide, code of
+  conduct, issue template, and pull request template.
+- [x] Add Python/desktop CI, dependency updates, and an unsigned Apple Silicon
+  packaging workflow.
+- [x] Remove machine-specific paths and obsolete two-repository launch steps
+  from release documentation.
+- [x] Pass 119 Python tests, 115 desktop tests, lint/build gates, production
+  audit, ARM64 package creation, and packaged-app smoke launch.
+- [ ] Merge the release pull request after final owner review.
+
 ## Current sprint
 
 - [x] Bootstrap a smokeable ERD tool workspace for auto-orch Author grounding.
