@@ -18,7 +18,7 @@ Run the complete desktop source gate:
 
 ```bash
 npm run verify:release
-npm audit --omit=dev
+npm audit --omit=dev --audit-level=high
 ```
 
 Build an unsigned Apple Silicon release:
