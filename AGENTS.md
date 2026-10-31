@@ -23,7 +23,9 @@ At the start of every session, in order:
 
 Bounded engineering work runs through the Supervisor Kernel (invoke `/supervise` in your harness; Codex: `$supervise`). Agent-Orch is
 abandoned (D497); `OPERATE.md` is a historical record of its path. Do not
-replace the governed path with ad hoc scripts.
+replace the governed path with ad hoc scripts. Stop for human approval of the
+frozen work definition (the kernel manifest and its gates) before launching
+anything; approval is the human's decision, never an agent's.
 
 ## Mission
 

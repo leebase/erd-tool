@@ -4,8 +4,9 @@
 > 2026-10-31).** Bounded engineering work now runs through the Supervisor
 > Kernel: invoke `/supervise` in your harness (Codex: `$supervise`). Do not
 > start new Agent-Orch workflows from this file. It is kept as a record of the
-> former path. Any project-specific acceptance, oracle, review or test rule in
-> it, or elsewhere in this repository, still applies under the kernel.
+> former path. Any project-specific acceptance, human-approval, oracle, review
+> or test rule in it, or elsewhere in this repository, still applies under the
+> kernel.
 
 > You were asked to set up, launch, or report on a governed Agent-Orch
 > workflow for this repo. Follow this sequence in order.
