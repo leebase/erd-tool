@@ -18,14 +18,12 @@ At the start of every session, in order:
 5. Read `WHERE_AM_I.md` for product-level orientation.
 6. Read `project-plan.md`, `product-definition.md`, and `architecture.md` when
    scope or technical direction is unclear.
-7. Check the sibling runs root `../erd-tool-agent-orch-runs/` and the latest
-   dashboard before assuming manual implementation is appropriate.
+7. Check the sibling runs root `../erd-tool-agent-orch-runs/` for historical
+   Agent-Orch evidence before assuming earlier work is missing.
 
-If asked to set up, launch, resume, or report on governed work, read
-`OPERATE.md` and follow its generate -> lint -> human approval ->
-`launch-workflow --detach` -> relay-banner sequence. Auto-orch should author
-playbooks and launch Agent-Orch through the real CLI; do not replace that path
-with ad hoc scripts.
+Bounded engineering work runs through the Supervisor Kernel (invoke `/supervise` in your harness; Codex: `$supervise`). Agent-Orch is
+abandoned (D497); `OPERATE.md` is a historical record of its path. Do not
+replace the governed path with ad hoc scripts.
 
 ## Mission
 
@@ -44,13 +42,15 @@ generation, and round-trip engineering.
 ## Quality Gates
 
 Generated work should include automated tests, format/lint/type checks, smoke
-checks for user-visible workflows, and Agent-Orch review verdict gates.
+checks for user-visible workflows, and independent review verdict gates
+(formerly Agent-Orch review verdict gates; now the Supervisor Kernel's
+independent review).
 
 ## AgentFlow Updates
 
 - Update `context.md` and `result-review.md` when a governed run, sprint slice,
   or meaningful manual intervention completes.
 - Update `sprint-plan.md` when sprint tasks change state.
-- Keep Agent-Orch run evidence outside the workspace in
+- Keep historical Agent-Orch run evidence outside the workspace in
   `../erd-tool-agent-orch-runs/`.
-- Preserve strong smoke and review-verdict gates on code-producing playbooks.
+- Preserve strong smoke and review-verdict gates on code-producing work.
